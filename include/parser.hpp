@@ -107,7 +107,25 @@ struct parser_promise {
     };
 };
 template <class T>
-struct parser {
+class do_parse {
+    std::coroutine_handle<parser_promise<T>> handle_;
+
+   public:
     using promise_type = parser_promise<T>;
+    do_parse() = default;
+    do_parse(do_parse&& d) noexcept
+      : handle_(std::exchange(d.handle_, nullptr)) {}
+    do_parse(std::coroutine_handle<promise_type> handle) noexcept
+      : handle_(handle) {}
+
+    // This should only ever be run once, so it must be run either
+    // on a prvalue do_parse or a moved do_parse
+    do_parse_result<T> operator()(state_t state) && {
+        handle_.resume();
+        return std::move(handle_.promise().result);
+    }
+    ~do_parse() {
+        handle_.destroy();
+    }
 };
 } // namespace noam
