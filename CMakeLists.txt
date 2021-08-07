@@ -12,6 +12,9 @@ set(working_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 # Use pthreads, if availible
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+# We want to export compile commands b/c it's useful for ccls
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Enable threads in project
 find_package(Threads REQUIRED)
 
@@ -28,9 +31,15 @@ if (MSVC)
     target_compile_options(${libname} INTERFACE "/EHa")
 endif()
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # This definition is needed b/c the <coroutines> header needs it in order
+    # to work on clang
+    target_compile_definitions(${libname} INTERFACE __cpp_impl_coroutine=1)
+endif()
+
 # Enables GCC support for coroutines (these are standard C++ now but GCC still
 # requires a flag for them)
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${libname} INTERFACE "-fcoroutines")
 endif()
 
@@ -95,6 +104,3 @@ if((EXISTS "${working_dir}/test/") AND (${CMAKE_PROJECT_NAME} STREQUAL ${project
         message("[test: ${test_name}]")
     endforeach()
 endif()
-
-# We want to export compile commands b/c it's useful for ccls
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
