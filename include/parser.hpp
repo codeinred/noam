@@ -105,6 +105,10 @@ struct parser_promise {
     auto await_transform(F&& func) {
         return await_parse {std::forward<F>(func), &result.state_, {}};
     };
+    void unhandled_exception() {
+        // Fuck this shit we just cancelling it all
+        result.has_result = false;
+    }
 };
 template <class T>
 class do_parse {
