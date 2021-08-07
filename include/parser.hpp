@@ -91,6 +91,9 @@ struct do_parse_result {
 };
 
 template <class T>
+class do_parse;
+
+template <class T>
 struct parser_promise {
     do_parse_result<T> result;
 
@@ -108,6 +111,10 @@ struct parser_promise {
     void unhandled_exception() {
         // Fuck this shit we just cancelling it all
         result.has_result = false;
+    }
+
+    do_parse<T> get_return_object() {
+        return do_parse<T>(std::coroutine_handle<parser_promise>::from_promise(*this));
     }
 };
 template <class T>
