@@ -51,6 +51,11 @@ struct await_parse {
         return std::forward<result_t>(result).value();
     }
 };
+template <class F>
+await_parse(F func, state_t*) -> await_parse<F>;
+template <class F>
+await_parse(F func, state_t*, std::invoke_result_t<F, state_t>)
+    -> await_parse<F>;
 
 template <parser_func... F>
 auto either(F&&... funcs) {
