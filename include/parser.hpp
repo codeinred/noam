@@ -76,6 +76,19 @@ auto map(F&& func, Parser&& parser) {
     };
 }
 
+template <class Value>
+struct do_parse_result {
+    state_t state_ {};
+    Value value_ {};
+    bool has_result = false;
+    constexpr bool good() const noexcept { return has_result; }
+    constexpr decltype(auto) value() & noexcept { return value_; }
+    constexpr decltype(auto) value() const& noexcept { return value_; }
+    constexpr decltype(auto) value() && noexcept {
+        return std::move(*this).value_;
+    }
+};
+
 template <class T>
 struct parser_promise {
 
