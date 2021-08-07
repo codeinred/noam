@@ -23,17 +23,17 @@ concept parser_func = requires(F func, state_t state) {
 
 template <parser_func Func>
 struct await_parse {
-    Func func;
+    Func func {};
     // This is provided by the promise type via await_transform
     // It's non-owned so using a pointer here is fine
-    state_t* state;
+    state_t* state = nullptr;
 
     // Gets a copy of the internal state
     constexpr state_t copy_state() const noexcept { return *state; }
     using result_t = std::invoke_result_t<Func, state_t>;
-    result_t result;
+    result_t result {};
     constexpr bool await_ready() const noexcept {
-        result = func(copy_state());
+        result = std::forward<Func>(func)(copy_state());
         if (result.good()) {
             // We only update the state if the parse succeeded
             *state = result.state();
