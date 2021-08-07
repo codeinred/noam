@@ -135,6 +135,10 @@ class do_parse {
         handle_.resume();
         return std::move(handle_.promise().result);
     }
+    do_parse_result<T> run(state_t state) && {
+        handle_.resume();
+        return std::move(handle_.promise().result);
+    }
     ~do_parse() {
         handle_.destroy();
     }
