@@ -82,6 +82,7 @@ struct do_parse_result {
     Value value_ {};
     bool has_result = false;
     constexpr bool good() const noexcept { return has_result; }
+    constexpr state_t state() const noexcept { return state_; }
     constexpr decltype(auto) value() & noexcept { return value_; }
     constexpr decltype(auto) value() const& noexcept { return value_; }
     constexpr decltype(auto) value() && noexcept {
