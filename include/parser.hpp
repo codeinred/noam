@@ -94,8 +94,8 @@ template <class T>
 struct parser_promise {
     do_parse_result<T> result;
 
-    constexpr std::suspend_always initial_suspend() { return {}; }
-    constexpr std::suspend_always final_suspend() { return {}; }
+    constexpr std::suspend_always initial_suspend() noexcept { return {}; }
+    constexpr std::suspend_always final_suspend() noexcept { return {}; }
 
     void return_value(T value) {
         result.value_ = std::move(value);
