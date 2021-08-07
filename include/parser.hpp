@@ -10,7 +10,8 @@ using std::same_as;
 using state_t = std::string_view;
 
 template <class T>
-concept parse_result = requires(T const t) {
+concept parse_result =
+    std::is_default_constructible_v<T> && requires(T const t) {
     { t.good() } -> convertible_to<bool>;
     { t.value() };
     { t.state() } -> same_as<state_t>;
