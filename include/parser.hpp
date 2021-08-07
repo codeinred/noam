@@ -92,7 +92,19 @@ struct do_parse_result {
 
 template <class T>
 struct parser_promise {
+    do_parse_result<T> result;
 
+    constexpr std::suspend_always initial_suspend() { return {}; }
+    constexpr std::suspend_always final_suspend() { return {}; }
+
+    void return_value(T value) {
+        result.value_ = std::move(value);
+        result.has_result = true;
+    }
+    template <parser_func F>
+    auto await_transform(F&& func) {
+        return await_parse {std::forward<F>(func), &result.state_, {}};
+    };
 };
 template <class T>
 struct parser {
