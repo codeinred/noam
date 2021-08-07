@@ -31,7 +31,7 @@ struct await_parse {
     // Gets a copy of the internal state
     constexpr state_t copy_state() const noexcept { return *state; }
     using result_t = std::invoke_result_t<Func, state_t>;
-    result_t result {};
+    result_t result;
     constexpr bool await_ready() const noexcept {
         result = std::forward<Func>(func)(copy_state());
         if (result.good()) {
@@ -48,7 +48,7 @@ struct await_parse {
     constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
 
     constexpr decltype(auto) await_resume() const noexcept {
-        return result.value();
+        return std::forward<result_t>(result).value();
     }
 };
 
