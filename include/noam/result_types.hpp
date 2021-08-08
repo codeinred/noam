@@ -128,6 +128,25 @@ class standard_result {
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
 
+// The result of fmap'ing a parser result. It preserves BaseResult.good() and
+// BaseResult.new_state(), however transform_result.value() is given by
+// func(BaseResult.value())
+template <class BaseResult, class Func>
+struct transform_result : BaseResult {
+    [[no_unique_address]] Func func;
+    using BaseResult::good;
+    using BaseResult::new_state;
+    constexpr decltype(auto) value() & { return func(BaseResult::value()); }
+    constexpr decltype(auto) value() const& {
+        return func(BaseResult::value());
+    }
+    constexpr decltype(auto) value() && {
+        return std::move(*this).func(std::move(*this).BaseResult::value());
+    }
+};
+template <class BaseResult, class Func>
+transform_result(BaseResult, Func) -> transform_result<BaseResult, Func>;
+
 // *To be read in the same voice you'd use to speak to a dog who's a good boy.*
 // Who's a good boy? pure_result is! You're a good boy, aren't you? Yes you are!
 // You're always good and you're idempotent and your state is always identical
@@ -157,5 +176,12 @@ struct result_traits<state_result> {
 template <class Value>
 struct result_traits<optional_result<Value>> {
     constexpr static bool always_good = true;
+};
+
+// transform_result<BaseResult, Func> is a good boy if and only if BaseResult
+// is a good boy. 🐶
+template <class BaseResult, class Func>
+struct result_traits<transform_result<BaseResult, Func>> {
+    constexpr static bool always_good = result_always_good_v<BaseResult>;
 };
 } // namespace noam
