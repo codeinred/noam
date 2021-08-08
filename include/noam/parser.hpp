@@ -1,59 +1,26 @@
-#include <concepts>
+#pragma once
 #include <noam/util/stdlib_coroutine.hpp>
+#include <noam/concepts.hpp>
 #include <optional>
 #include <string_view>
 
 namespace noam {
-using std::convertible_to;
-using std::invocable;
-using std::same_as;
-using state_t = std::string_view;
-
 template <class T>
 class do_parse;
 
-template <class T>
-concept parse_result = requires(T t) {
-    { t.good() } -> convertible_to<bool>;
-    { t.value() };
-    { t.new_state() } -> same_as<state_t>;
+template <class Func>
+struct parser {
+    // Enables empty base class optimization
+    // if Func is empty (i.e, [](){}), parser<Func> is too
+    [[no_unique_address]] Func parse;
 };
-
-class boolean_result {
-    std::string_view state;
-    bool value_;
-
-   public:
-    boolean_result() = default;
-    boolean_result(boolean_result const&) = default;
-    boolean_result(boolean_result&&) = default;
-    constexpr boolean_result(
-        std::string_view initial, parse_result auto&& result) {
-        if (result.good()) {
-            state = result.new_state();
-            value_ = true;
-        } else {
-            state = initial;
-            value_ = false;
-        }
-    }
-    boolean_result& operator=(boolean_result const&) = default;
-    boolean_result& operator=(boolean_result&&) = default;
-    // It's always good b/c it always has a value
-    constexpr bool good() const noexcept { return true; }
-    constexpr bool value() const { return value_; }
-    constexpr state_t new_state() const { return state; }
-};
+template <class Func>
+parser(Func) -> parser<Func>;
 
 constexpr auto test = [](auto&& parser_func) {
     return [=](std::string_view sv) -> boolean_result {
         return boolean_result(sv, parser_func(sv));
     };
-};
-
-template <class F>
-concept parser_func = requires(F func, state_t state) {
-    { func(state) } -> parse_result;
 };
 
 // workaround until I figure out how to make do_parse idempotent
