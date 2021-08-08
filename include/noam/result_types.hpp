@@ -23,4 +23,19 @@ constexpr bool result_always_good_v = result_traits<Result>::always_good;
 
 template <class Result>
 constexpr bool result_is_🐶 = result_traits<Result>::always_good;
+
+template <class Value>
+struct pure_result {
+    state_t state;
+    Value v;
+
+    // pure_result is a good boy
+    constexpr bool good() const noexcept { return true; }
+    constexpr state_t new_state() const noexcept { return state; }
+    constexpr decltype(auto) value() & { return v; }
+    constexpr decltype(auto) value() const& { return v; }
+    constexpr decltype(auto) value() && { return std::move(*this).v; }
+};
+template <class Value>
+pure_result(state_t, Value) -> pure_result<Value>;
 } // namespace noam
