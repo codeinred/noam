@@ -107,4 +107,12 @@ template <class Value>
 struct result_traits<pure_result<Value>> {
     constexpr static bool always_good = true;
 };
+
+// A boolean_result is always good b/c the value returned checks if another
+// parser succeeded. This implies boolean_result.good() always returns true.
+// ∴ it is proveable that boolean_result is also a good boy!
+template <>
+struct result_traits<boolean_result> {
+    constexpr static bool always_good = true;
+};
 } // namespace noam
