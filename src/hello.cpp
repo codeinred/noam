@@ -1,5 +1,6 @@
 #include <iostream>
 #include <noam/co_parse.hpp>
+#include <noam/combinators.hpp>
 #include <vector>
 
 bool is_digit(char c) { return '0' <= c && c <= '9'; }
@@ -31,26 +32,11 @@ auto get_digit = [](std::string_view state) -> noam::standard_result<int> {
                : noam::standard_result<int> {};
     }
 };
-auto fold_left = [](auto parser, auto fold) {
-    using value_t = std::decay_t<decltype(parser(std::string_view {}).value())>;
-    return [=](std::string_view state) -> noam::standard_result<value_t> {
-        auto result = parser(state);
-        if (!result.good()) {
-            return {};
-        }
-        state = result.new_state();
-        value_t value = result.value();
-        for (result = parser(state); result.good(); result = parser(state)) {
-            value = fold(value, result.value());
-            state = result.new_state();
-        }
-        return noam::standard_result {state, value};
-    };
-};
+
 
 noam::co_parse<long> read_int() {
     auto fold_digit = [](long a, long b) { return a * 10 + b; };
-    int value = co_await fold_left(get_digit, fold_digit);
+    int value = co_await noam::fold_left(get_digit, fold_digit);
     co_return value;
 }
 
