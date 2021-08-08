@@ -74,4 +74,28 @@ struct state_result {
     constexpr state_t value() const { return state; }
     constexpr state_t new_state() const { return state; }
 };
+
+template <class Value>
+class standard_result {
+   private:
+    state_t state;
+    Value v;
+    bool is_good = false;
+
+   public:
+    standard_result() = default;
+    standard_result(state_t state, Value value) : state(state), v(value), is_good(true) {}
+    standard_result(standard_result const&) = default;
+    standard_result(standard_result&&) = default;
+    standard_result& operator=(standard_result const&) = default;
+    standard_result& operator=(standard_result&&) = default;
+
+    constexpr bool good() const noexcept { return is_good; }
+    constexpr state_t new_state() const noexcept { return state; }
+    constexpr decltype(auto) value() & { return v; }
+    constexpr decltype(auto) value() const& { return v; }
+    constexpr decltype(auto) value() && { return std::move(*this).v; }
+};
+template <class Value>
+standard_result(state_t, Value) -> standard_result<Value>;
 } // namespace noam
