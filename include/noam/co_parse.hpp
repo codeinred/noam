@@ -9,21 +9,6 @@ namespace noam {
 template <class T>
 class co_parse;
 
-template <class Func>
-struct parser {
-    // Enables empty base class optimization
-    // if Func is empty (i.e, [](){}), parser<Func> is too
-    [[no_unique_address]] Func parse;
-};
-template <class Func>
-parser(Func) -> parser<Func>;
-
-constexpr auto test = [](auto&& any_parser) {
-    return [=](std::string_view sv) -> boolean_result {
-        return boolean_result(sv, any_parser(sv));
-    };
-};
-
 // workaround until I figure out how to make co_parse idempotent
 template <class F>
 F& move_if_necessary(F& f) {
