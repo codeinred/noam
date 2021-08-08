@@ -1,7 +1,7 @@
 #pragma once
-#include <noam/util/stdlib_coroutine.hpp>
 #include <noam/concepts.hpp>
 #include <noam/result_types.hpp>
+#include <noam/util/stdlib_coroutine.hpp>
 #include <optional>
 #include <string_view>
 
@@ -27,12 +27,12 @@ struct await_parse {
     // It's non-owned so using a pointer here is fine
     state_t* state = nullptr;
 
-    using result_t = std::invoke_result_t<Func, state_t>;
+    using result_t = decltype(std::declval<Func>().parse(state_t {}));
     result_t result;
     // Gets a copy of the internal state
     constexpr state_t copy_state() const noexcept { return *state; }
     constexpr bool await_ready() noexcept {
-        result = std::forward<Func>(func)(copy_state());
+        result = std::forward<Func>(func).parse(copy_state());
         if (result.good()) {
             // We only update the state if the parse succeeded
             *state = result.new_state();
@@ -103,7 +103,8 @@ struct parser_promise {
     }
     template <any_parser F>
     auto await_transform(F&& func) {
-        return await_parse<std::decay_t<F>> {std::forward<F>(func), &current_state};
+        return await_parse<std::decay_t<F>> {
+            std::forward<F>(func), &current_state};
     };
 
     template <class U>

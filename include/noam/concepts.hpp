@@ -20,8 +20,8 @@ concept parse_result = requires(T t) {
     { t.new_state() } -> same_as<state_t>;
 };
 
-template <class F>
-concept any_parser = requires(F func, state_t state) {
-    { func(state) } -> parse_result;
+template <class Parser>
+concept any_parser = requires(Parser parser, state_t state) {
+    { parser.parse(state) } -> parse_result;
 };
 } // namespace noam
