@@ -98,4 +98,13 @@ class standard_result {
 };
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
+
+// *To be read in the same voice you'd use to speak to a dog who's a good boy.*
+// Who's a good boy? pure_result is! You're a good boy, aren't you? Yes you are!
+// You're always good and you're idempotent and your state is always identical
+// to the one that went in! Good boy, pure_result, good boy!!! 🐶
+template <class Value>
+struct result_traits<pure_result<Value>> {
+    constexpr static bool always_good = true;
+};
 } // namespace noam
