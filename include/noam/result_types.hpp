@@ -84,7 +84,10 @@ class standard_result {
 
    public:
     standard_result() = default;
-    standard_result(state_t state, Value value) : state(state), v(value), is_good(true) {}
+    standard_result(state_t state, Value value)
+      : state(state)
+      , v(value)
+      , is_good(true) {}
     standard_result(standard_result const&) = default;
     standard_result(standard_result&&) = default;
     standard_result& operator=(standard_result const&) = default;
