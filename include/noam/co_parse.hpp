@@ -85,14 +85,6 @@ auto either(F&&... funcs) {
     };
 }
 
-template <class F, any_parser Parser>
-auto map(F&& func, Parser&& parser) {
-    return [f = std::forward<F>(func),
-            p = std::forward<Parser>(parser)](state_t state) {
-        // to-do: implement map on parser_result
-    };
-}
-
 template <class Value>
 struct co_parse_result {
     state_t state_ {};
