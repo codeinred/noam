@@ -2,106 +2,63 @@
 #include <iostream>
 #include <vector>
 
-auto pure = [](auto val) {
-    struct result {
-        decltype(val) value_;
-        std::string_view state;
-        constexpr bool good() const noexcept {
-            return true;
-        }
-        constexpr std::string_view value() {
-            return value_;
-        }
-        constexpr std::string_view new_state() {
-            return state;
-        }
-        result& operator()(std::string_view state_) {
-            state = state_;
-        }
-    };
-    return result{val};
-};
-auto get_state = [](std::string_view sv) {
-    struct result {
-        std::string_view state;
-        constexpr bool good() const noexcept {
-            return true;
-        }
-        constexpr std::string_view value() {
-            return state;
-        }
-        constexpr std::string_view new_state() {
-            return state;
-        }
-    };
-    return result{sv};
-};
-auto get_char = [](std::string_view sv) {
-    struct result {
-        std::string_view state;
-        constexpr bool good() const noexcept {
-            return state.size() > 0;
-        }
-        constexpr char value() const {
-            return state[0];
-        }
-        constexpr std::string_view new_state() const {
-            return state.substr(1);
-        }
-    };
-    return result{sv};
-};
 bool is_digit(char c) {
     return '0' <= c && c <= '9';
 }
 
-auto get_digit = [](std::string_view sv) {
-    struct result {
-        std::string_view state;
-        constexpr bool good() const noexcept {
-            return state.size() > 0 && is_digit(state[0]);
-        }
-        constexpr char value() const {
-            return state[0];
-        }
-        constexpr std::string_view new_state() const {
-            return state.substr(1);
-        }
+auto pure = [](auto value) {
+    return [=](std::string_view state) {
+        return noam::pure_result{state, value};
     };
-    return result{sv};
 };
 
-noam::do_parse<std::string_view> read_digits() {
-    std::string_view current_state = co_await get_state;
-    int digits_len = 0;
-    while(co_await noam::test(get_digit)) {
-        digits_len++;
-    }
-    std::cout << digits_len << '\n';
-    co_return current_state.substr(0, digits_len);
-}
-auto split_digits() -> noam::do_parse<std::vector<std::string_view>> {
-    std::vector<std::string_view> vect;
+auto get_state = [](std::string_view state) {
+    return noam::state_result{state};
+};
 
-    std::cout << "in split_digits, initial state: " << (co_await get_state) << std::endl;
-    while(true) {
-        auto digits = co_await read_digits;
-        std::cout << "read " << digits << '\n';
-        vect.push_back(digits);
-        std::cout << "vect.size: " << vect.size() << '\n';
-        if((co_await get_state).empty())
-            break;
+auto get_char = [](std::string_view state) -> noam::standard_result<char> {
+    return state.empty()
+        ? noam::standard_result<char>{}
+        : noam::standard_result<char>{state.substr(1), state[0]};
+};
+
+auto get_digit = [](std::string_view state) -> noam::standard_result<int> {
+    if(state.empty()) {
+        return {};
+    } else {
+        char c = state[0];
+        return is_digit(c)
+            ? noam::standard_result<int>{state.substr(1), c - '0'}
+            : noam::standard_result<int>{};
     }
-    std::cout << "Done" << '\n';
-    for(auto v : vect) {
-        std::cout << v << '\n';
-    }
-    co_return vect;
+};
+auto fold_left = [](auto parser, auto fold) {
+    using value_t = std::decay_t<decltype(parser(std::string_view{}).value())>;
+    return [=](std::string_view state) -> noam::standard_result<value_t> {
+        auto result = parser(state);
+        if(!result.good()) {
+            return {};
+        }
+        state = result.new_state();
+        value_t value = result.value();
+        for(result = parser(state); result.good(); result = parser(state)) {
+            value = fold(value, result.value());
+            state = result.new_state();
+        }
+        return noam::standard_result{state, value};
+    };
+};
+
+noam::do_parse<long> read_int() {
+    auto fold_digit = [](long a, long b) { return a * 10 + b;};
+    int value = co_await fold_left(get_digit, fold_digit);
+    co_return value;
 }
+
+
 int main() {
-    std::string_view sv = "123 4 5 7634 232423";
-    auto result = split_digits().parse(sv);
-    for(auto v : result.value()) {
-        std::cout << v << '\n';
-    }
+    std::string_view str = "93289 hello";
+    auto result = read_int().parse(str);
+    std::cout << "Value: " << result.value() << '\n';
+    std::cout << "Remaining: '" << result.new_state() << "'\n";
 }
