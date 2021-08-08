@@ -21,7 +21,7 @@ concept parse_result = requires(T t) {
 };
 
 template <class F>
-concept parser_func = requires(F func, state_t state) {
+concept any_parser = requires(F func, state_t state) {
     { func(state) } -> parse_result;
 };
 } // namespace noam

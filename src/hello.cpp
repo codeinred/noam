@@ -49,7 +49,7 @@ auto fold_left = [](auto parser, auto fold) {
     };
 };
 
-noam::do_parse<long> read_int() {
+noam::co_parse<long> read_int() {
     auto fold_digit = [](long a, long b) { return a * 10 + b;};
     int value = co_await fold_left(get_digit, fold_digit);
     co_return value;
