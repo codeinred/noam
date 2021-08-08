@@ -38,4 +38,30 @@ struct pure_result {
 };
 template <class Value>
 pure_result(state_t, Value) -> pure_result<Value>;
+
+class boolean_result {
+    state_t state;
+    bool value_;
+
+   public:
+    boolean_result() = default;
+    boolean_result(boolean_result const&) = default;
+    boolean_result(boolean_result&&) = default;
+    constexpr boolean_result(
+        std::string_view initial, parse_result auto&& result) {
+        if (result.good()) {
+            state = result.new_state();
+            value_ = true;
+        } else {
+            state = initial;
+            value_ = false;
+        }
+    }
+    boolean_result& operator=(boolean_result const&) = default;
+    boolean_result& operator=(boolean_result&&) = default;
+    // It's always good b/c it always has a value
+    constexpr bool good() const noexcept { return true; }
+    constexpr bool value() const { return value_; }
+    constexpr state_t new_state() const { return state; }
+};
 } // namespace noam
