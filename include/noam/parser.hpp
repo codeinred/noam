@@ -1,6 +1,7 @@
 #pragma once
 #include <noam/util/stdlib_coroutine.hpp>
 #include <noam/concepts.hpp>
+#include <noam/result_types.hpp>
 #include <optional>
 #include <string_view>
 
