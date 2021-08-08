@@ -115,4 +115,10 @@ template <>
 struct result_traits<boolean_result> {
     constexpr static bool always_good = true;
 };
+
+// A state_result is also a Good Boy!!! So many good boys over here 🐶
+template <>
+struct result_traits<state_result> {
+    constexpr static bool always_good = true;
+};
 } // namespace noam
