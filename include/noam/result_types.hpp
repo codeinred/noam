@@ -1,7 +1,10 @@
 #pragma once
 #include <noam/concepts.hpp>
+#include <optional>
 
 namespace noam {
+using std::optional;
+
 template <class Result>
 struct result_traits {
     // Individual Result types can certify that good() always returns true
@@ -76,6 +79,29 @@ struct state_result {
 };
 
 template <class Value>
+struct optional_result {
+    state_t state;
+    std::optional<Value> v {};
+
+   public:
+    optional_result(state_t state) noexcept
+      : state(state) {}
+    optional_result(state_t state, Value value)
+      : state(state)
+      , v(value) {}
+    optional_result(optional_result const&) = default;
+    optional_result(optional_result&&) = default;
+    optional_result& operator=(optional_result const&) = default;
+    optional_result& operator=(optional_result&&) = default;
+
+    constexpr bool good() const noexcept { return true; }
+    constexpr state_t new_state() const noexcept { return state; }
+    constexpr decltype(auto) value() & { return v; }
+    constexpr decltype(auto) value() const& { return v; }
+    constexpr decltype(auto) value() && { return std::move(*this).v; }
+};
+
+template <class Value>
 class standard_result {
    private:
     state_t state;
@@ -122,6 +148,14 @@ struct result_traits<boolean_result> {
 // A state_result is also a Good Boy!!! So many good boys over here 🐶
 template <>
 struct result_traits<state_result> {
+    constexpr static bool always_good = true;
+};
+
+// Optional results are used to transform a non-good result into a good result
+// by returning an optional<Value> instead of Value. optional_results are very
+// good boys! 🐶
+template <class Value>
+struct result_traits<optional_result<Value>> {
     constexpr static bool always_good = true;
 };
 } // namespace noam
