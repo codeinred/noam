@@ -64,4 +64,14 @@ class boolean_result {
     constexpr bool value() const { return value_; }
     constexpr state_t new_state() const { return state; }
 };
+
+// used for obtaining the hidden state of the parser (e.g., for lookahead)
+// this is not impure since it cannot be used to modify that state
+// Rather, state_result is a Good Boy b/c it always produces a value! 🐶
+struct state_result {
+    state_t state;
+    constexpr bool good() const noexcept { return true; }
+    constexpr state_t value() const { return state; }
+    constexpr state_t new_state() const { return state; }
+};
 } // namespace noam
