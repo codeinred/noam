@@ -27,6 +27,19 @@ concept parse_result = requires(Result result) {
 };
 
 /**
+ * @brief A result type that allows resetting the state via set_state. This
+ * makes implementation of the lookahead combinator easier for results that
+ * support this
+ *
+ * @tparam Result the type to test
+ */
+template <class Result>
+concept lookahead_enabled_result =
+    parse_result<Result> && requires(Result result, state_t state) {
+    {result.set_state(state)};
+};
+
+/**
  * @brief A concept that matches any parser type. Parsers must have a function
  * parse() which returns a parse_result
  *
