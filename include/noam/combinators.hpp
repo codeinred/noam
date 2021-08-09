@@ -18,6 +18,15 @@ constexpr auto pure = [](auto value) {
     }};
 };
 
+/**
+ * @brief Creates a parser p and returns a parser that reads values parsed by p
+ * and combines them using fold
+ *
+ * @param p the parser to fold
+ * @param fold the operation with which to combine values produced by p
+ * @return parser<(fold_left1:lambda)> a parser that repeatedly obtains values
+ * by parsing the input with p, then folds those values using fold
+ */
 auto fold_left = [](auto p, auto fold) {
     using value_t = std::decay_t<decltype(p.parse(state_t {}).value())>;
     return parser {[=](state_t state) -> noam::standard_result<value_t> {
