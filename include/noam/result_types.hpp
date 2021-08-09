@@ -35,9 +35,9 @@ struct pure_result {
     // pure_result is a good boy
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
-    constexpr decltype(auto) value() & { return v; }
-    constexpr decltype(auto) value() const& { return v; }
-    constexpr decltype(auto) value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & { return v; }
+    constexpr decltype(auto) get_value() const& { return v; }
+    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
 };
 template <class Value>
 pure_result(state_t, Value) -> pure_result<Value>;
@@ -67,7 +67,7 @@ class boolean_result {
     boolean_result& operator=(boolean_result&&) = default;
     // It's always good b/c it always has a value
     constexpr bool good() const noexcept { return true; }
-    constexpr bool value() const { return value_; }
+    constexpr bool get_value() const { return value_; }
     constexpr state_t get_state() const { return state; }
 };
 
@@ -77,7 +77,7 @@ class boolean_result {
 struct state_result {
     state_t state;
     constexpr bool good() const noexcept { return true; }
-    constexpr state_t value() const { return state; }
+    constexpr state_t get_value() const { return state; }
     constexpr state_t get_state() const { return state; }
 };
 
@@ -99,9 +99,9 @@ struct optional_result {
 
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
-    constexpr decltype(auto) value() & { return v; }
-    constexpr decltype(auto) value() const& { return v; }
-    constexpr decltype(auto) value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & { return v; }
+    constexpr decltype(auto) get_value() const& { return v; }
+    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
 };
 
 template <class Value>
@@ -124,27 +124,27 @@ class standard_result {
 
     constexpr bool good() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
-    constexpr decltype(auto) value() & { return v; }
-    constexpr decltype(auto) value() const& { return v; }
-    constexpr decltype(auto) value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & { return v; }
+    constexpr decltype(auto) get_value() const& { return v; }
+    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
 };
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
 
 // The result of fmap'ing a parser result. It preserves BaseResult.good() and
-// BaseResult.get_state(), however transform_result.value() is given by
-// func(BaseResult.value())
+// BaseResult.get_state(), however transform_result.get_value() is given by
+// func(BaseResult.get_value())
 template <class BaseResult, class Func>
 struct transform_result : BaseResult {
     [[no_unique_address]] Func func;
     using BaseResult::good;
     using BaseResult::new_state;
-    constexpr decltype(auto) value() & { return func(BaseResult::value()); }
-    constexpr decltype(auto) value() const& {
-        return func(BaseResult::value());
+    constexpr decltype(auto) get_value() & { return func(BaseResult::get_value()); }
+    constexpr decltype(auto) get_value() const& {
+        return func(BaseResult::get_value());
     }
-    constexpr decltype(auto) value() && {
-        return std::move(*this).func(std::move(*this).BaseResult::value());
+    constexpr decltype(auto) get_value() && {
+        return std::move(*this).func(std::move(*this).BaseResult::get_value());
     }
 };
 template <class BaseResult, class Func>

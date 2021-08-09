@@ -29,16 +29,16 @@ constexpr auto pure = [](auto value) {
  * by parsing the input with p, then folds those values using fold
  */
 auto fold_left = [](auto p, auto fold) {
-    using value_t = std::decay_t<decltype(p.parse(state_t {}).value())>;
+    using value_t = std::decay_t<decltype(p.parse(state_t {}).get_value())>;
     return parser {[=](state_t state) -> noam::standard_result<value_t> {
         auto result = p.parse(state);
         if (!result.good()) {
             return {};
         }
         state = result.get_state();
-        value_t value = result.value();
+        value_t value = result.get_value();
         for (result = p.parse(state); result.good(); result = p.parse(state)) {
-            value = fold(value, result.value());
+            value = fold(value, result.get_value());
             state = result.get_state();
         }
         return noam::standard_result {state, value};
@@ -54,7 +54,7 @@ auto fold_left = [](auto p, auto fold) {
  * @param func The function used to do the map operation
  * @param p The parser to do the map operation on
  * @return parser<(map:lambda)> returns a parser such that map(func,
- * p).parse(str).value() = func(p.parse(str)).value())
+ * p).parse(str).get_value() = func(p.parse(str)).get_value())
  */
 template <class F, any_parser Parser>
 auto map(F&& func, Parser&& p) {
@@ -116,14 +116,14 @@ constexpr auto require_prefix = [](std::string_view prefix) {
  *
  */
 constexpr auto lookahead = [](auto&& parser) {
-    using value_t = std::decay_t<decltype(parser.parse(state_t {}).value())>;
+    using value_t = std::decay_t<decltype(parser.parse(state_t {}).get_value())>;
     return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
         auto result = parser.parse(state);
         if constexpr (result_always_good_v<decltype(result)>) {
-            return pure_result {state, std::move(result).value()};
+            return pure_result {state, std::move(result).get_value()};
         } else {
             if (result.good()) {
-                return standard_result<value_t> {state, std::move(result).value()};
+                return standard_result<value_t> {state, std::move(result).get_value()};
             } else {
                 return standard_result<value_t> {};
             }
@@ -143,7 +143,7 @@ constexpr auto try_parse = [](auto&& parser) {
         bool result_good = result.good();
         return pure_result {
             result_good ? result.state() : state,
-            result_good ? std::optional {std::move(result).value()}
+            result_good ? std::optional {std::move(result).get_value()}
                         : std::nullopt};
     } / make_parser;
 };
@@ -158,7 +158,7 @@ constexpr auto try_lookahead = [](auto&& parser) {
         auto result = parser.parse(state);
         return pure_result {
             state, // Because we're doing lookahead, state doesn't get updated
-            result.good() ? std::optional {std::move(result).value()}
+            result.good() ? std::optional {std::move(result).get_value()}
                           : std::nullopt};
     } / make_parser;
 };

@@ -15,14 +15,14 @@ concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
 
 /**
  * @brief A concept that matches any result type. Result types must have a
- * good() function, a value() function, and a get_state() function.
+ * good() function, a get_value() function, and a get_state() function.
  *
  * @tparam Result the type to test
  */
 template <class Result>
 concept parse_result = requires(Result result) {
     { result.good() } -> convertible_to<bool>;
-    { result.value() };
+    { result.get_value() };
     { result.get_state() } -> same_as<state_t>;
 };
 

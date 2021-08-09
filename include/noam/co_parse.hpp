@@ -47,13 +47,13 @@ struct await_parse {
     constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
 
     constexpr decltype(auto) await_resume() & noexcept {
-        return std::forward<decltype(result)>(result).value();
+        return std::forward<decltype(result)>(result).get_value();
     }
     constexpr decltype(auto) await_resume() const& noexcept {
-        return result.value();
+        return result.get_value();
     }
     constexpr decltype(auto) await_resume() && noexcept {
-        return std::move(*this).result.value();
+        return std::move(*this).result.get_value();
     }
 };
 template <class F>
@@ -77,9 +77,9 @@ struct co_parse_result {
     bool has_result = false;
     constexpr bool good() const noexcept { return has_result; }
     constexpr state_t get_state() const noexcept { return state_; }
-    constexpr decltype(auto) value() & noexcept { return value_; }
-    constexpr decltype(auto) value() const& noexcept { return value_; }
-    constexpr decltype(auto) value() && noexcept {
+    constexpr decltype(auto) get_value() & noexcept { return value_; }
+    constexpr decltype(auto) get_value() const& noexcept { return value_; }
+    constexpr decltype(auto) get_value() && noexcept {
         return std::move(*this).value_;
     }
 };

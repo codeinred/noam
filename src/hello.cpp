@@ -38,6 +38,6 @@ noam::co_parse<long> read_int() {
 int main() {
     std::string_view str = "93289 hello";
     auto result = read_int().parse(str);
-    std::cout << "Value: " << result.value() << '\n';
+    std::cout << "Value: " << result.get_value() << '\n';
     std::cout << "Remaining: '" << result.get_state() << "'\n";
 }
