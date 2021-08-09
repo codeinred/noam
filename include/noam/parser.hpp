@@ -14,6 +14,12 @@ struct parser {
 template <class Func>
 parser(Func) -> parser<Func>;
 
+/**
+ * @brief This takes an implementation (such as a function or coroutine) and
+ * returns a parser based on the given implementation
+ *
+ * @param implementation The parameter or value defining the implementation
+ */
 constexpr auto make_parser = []<class T>(T&& implementation) {
     return parser {std::forward<T>(implementation)};
 };
