@@ -14,9 +14,10 @@ template <class T>
 concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
 
 /**
- * @brief Defines the interface of the result type
+ * @brief A concept that matches any result type. Result types must have a
+ * good() function, a value() function, and a new_state() function.
  *
- * @tparam Result the result type
+ * @tparam Result the type to test
  */
 template <class Result>
 concept parse_result = requires(Result result) {
