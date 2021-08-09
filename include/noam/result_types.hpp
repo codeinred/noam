@@ -35,6 +35,7 @@ struct pure_result {
     // pure_result is a good boy
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & { return v; }
     constexpr decltype(auto) get_value() const& { return v; }
     constexpr decltype(auto) get_value() && { return std::move(*this).v; }
@@ -99,6 +100,7 @@ struct optional_result {
 
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & { return v; }
     constexpr decltype(auto) get_value() const& { return v; }
     constexpr decltype(auto) get_value() && { return std::move(*this).v; }
@@ -124,6 +126,7 @@ class standard_result {
 
     constexpr bool good() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & { return v; }
     constexpr decltype(auto) get_value() const& { return v; }
     constexpr decltype(auto) get_value() && { return std::move(*this).v; }
