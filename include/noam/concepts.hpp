@@ -13,11 +13,16 @@ using std::same_as;
 template <class T>
 concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
 
-template <class T>
-concept parse_result = requires(T t) {
-    { t.good() } -> convertible_to<bool>;
-    { t.value() };
-    { t.new_state() } -> same_as<state_t>;
+/**
+ * @brief Defines the interface of the result type
+ *
+ * @tparam Result the result type
+ */
+template <class Result>
+concept parse_result = requires(Result result) {
+    { result.good() } -> convertible_to<bool>;
+    { result.value() };
+    { result.new_state() } -> same_as<state_t>;
 };
 
 template <class Parser>
