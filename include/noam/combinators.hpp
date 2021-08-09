@@ -86,8 +86,7 @@ constexpr auto test = [](auto&& p) {
 constexpr auto test_prefix = [](std::string_view prefix) {
     return [=](noam::state_t state) {
         if (state.starts_with(prefix)) {
-            state.remove_prefix(prefix.size());
-            return boolean_result {state, true};
+            return boolean_result {state.substr(prefix.size()), true};
         } else {
             return boolean_result {state, false};
         }
@@ -104,8 +103,7 @@ constexpr auto test_prefix = [](std::string_view prefix) {
 constexpr auto require_prefix = [](std::string_view prefix) {
     return [=](noam::state_t state) -> standard_result<std::string_view> {
         if(state.starts_with(prefix)) {
-            state.remove_prefix(prefix.size());
-            return {state, prefix};
+            return {state.substr(prefix.size()), prefix};
         } else {
             return {};
         }
