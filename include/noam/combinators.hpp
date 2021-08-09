@@ -6,6 +6,12 @@
 // This file holds functios that transform or modify parsers
 
 namespace noam {
+/**
+ * @brief Function that takes a value and returns a pure parser that returns
+ * that value
+ *
+ * @param value the value to return when invoking the parser
+ */
 constexpr auto pure = [](auto value) {
     return noam::parser {[=](std::string_view state) {
         return noam::pure_result {state, value};
