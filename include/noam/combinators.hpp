@@ -93,4 +93,22 @@ constexpr auto test_prefix = [](std::string_view prefix) {
         }
     } / make_parser;
 };
+
+/**
+ * @brief Creates a parser that requires a prefix. It'll return the prefix
+ * parsed if matched, and fail otherwise
+ *
+ * @param prefix input to match
+ *
+ */
+constexpr auto require_prefix = [](std::string_view prefix) {
+    return [=](noam::state_t state) -> standard_result<std::string_view> {
+        if(state.starts_with(prefix)) {
+            state.remove_prefix(prefix.size());
+            return {state, prefix};
+        } else {
+            return {};
+        }
+    } / make_parser;
+};
 } // namespace noam
