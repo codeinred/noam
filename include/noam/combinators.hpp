@@ -44,6 +44,17 @@ auto fold_left = [](auto p, auto fold) {
     }};
 };
 
+/**
+ * @brief Maps a function over a parser, returning a new parser whose output is
+ * func applied to the output of p
+ *
+ * @tparam F
+ * @tparam Parser
+ * @param func The function used to do the map operation
+ * @param p The parser to do the map operation on
+ * @return parser<(map:lambda)> returns a parser such that map(func,
+ * p).parse(str).value() = func(p.parse(str)).value())
+ */
 template <class F, any_parser Parser>
 auto map(F&& func, Parser&& p) {
     return parser {[f = std::forward<F>(func),
