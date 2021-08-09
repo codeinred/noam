@@ -48,7 +48,6 @@ template <class F, any_parser Parser>
 auto map(F&& func, Parser&& p) {
     return parser {[f = std::forward<F>(func),
                     p = std::forward<Parser>(p)](state_t state) {
-        // to-do: implement map on parser_result
         return transform_result {p.parse(state), f};
     }};
 }
