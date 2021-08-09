@@ -13,4 +13,8 @@ struct parser {
 };
 template <class Func>
 parser(Func) -> parser<Func>;
+
+constexpr auto make_parser = []<class T>(T&& implementation) {
+    return parser {std::forward<T>(implementation)};
+};
 } // namespace noam
