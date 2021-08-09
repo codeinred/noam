@@ -130,4 +130,21 @@ constexpr auto lookahead = [](auto&& parser) {
         }
     } / make_parser;
 };
+
+
+/**
+ * @brief Takes a Parser a and returns Parser Maybe a (which will always
+ * succeed, but the value may be nullopt)
+ *
+ */
+constexpr auto try_parse = [](auto&& parser) {
+    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
+        auto result = parser.parse(state);
+        bool result_good = result.good();
+        return pure_result {
+            result_good ? result.state() : state,
+            result_good ? std::optional {std::move(result).value()}
+                        : std::nullopt};
+    } / make_parser;
+};
 } // namespace noam
