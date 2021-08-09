@@ -25,6 +25,12 @@ concept parse_result = requires(Result result) {
     { result.new_state() } -> same_as<state_t>;
 };
 
+/**
+ * @brief A concept that matches any parser type. Parsers must have a function
+ * parse() which returns a parse_result
+ *
+ * @tparam Parser the type to test
+ */
 template <class Parser>
 concept any_parser = requires(Parser parser, state_t state) {
     { parser.parse(state) } -> parse_result;
