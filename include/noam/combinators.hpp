@@ -6,6 +6,12 @@
 // This file holds functios that transform or modify parsers
 
 namespace noam {
+constexpr auto pure = [](auto value) {
+    return noam::parser {[=](std::string_view state) {
+        return noam::pure_result {state, value};
+    }};
+};
+
 auto fold_left = [](auto p, auto fold) {
     using value_t = std::decay_t<decltype(p.parse(state_t {}).value())>;
     return parser {[=](state_t state) -> noam::standard_result<value_t> {

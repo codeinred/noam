@@ -5,12 +5,6 @@
 
 bool is_digit(char c) { return '0' <= c && c <= '9'; }
 
-auto pure = [](auto value) {
-    return noam::parser {[=](std::string_view state) {
-        return noam::pure_result {state, value};
-    }};
-};
-
 auto get_state = noam::parser {
     [](std::string_view state) { return noam::state_result {state}; }};
 
