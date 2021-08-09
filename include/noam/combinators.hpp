@@ -2,8 +2,9 @@
 #include <noam/concepts.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/util/then_operator.hpp>
 
-// This file holds functios that transform or modify parsers
+// This file holds functios that return parsers based on inputs
 
 namespace noam {
 /**
@@ -76,4 +77,20 @@ constexpr auto test = [](auto&& p) {
     }};
 };
 
+/**
+ * @brief Creates a parser that returns true if a prefix is matched and false
+ * otherwise
+ *
+ * @param prefix the prefix to test
+ */
+constexpr auto test_prefix = [](std::string_view prefix) {
+    return [=](noam::state_t state) {
+        if (state.starts_with(prefix)) {
+            state.remove_prefix(prefix.size());
+            return boolean_result {state, true};
+        } else {
+            return boolean_result {state, false};
+        }
+    } / make_parser;
+};
 } // namespace noam
