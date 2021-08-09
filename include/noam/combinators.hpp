@@ -35,11 +35,11 @@ auto fold_left = [](auto p, auto fold) {
         if (!result.good()) {
             return {};
         }
-        state = result.new_state();
+        state = result.get_state();
         value_t value = result.value();
         for (result = p.parse(state); result.good(); result = p.parse(state)) {
             value = fold(value, result.value());
-            state = result.new_state();
+            state = result.get_state();
         }
         return noam::standard_result {state, value};
     }};

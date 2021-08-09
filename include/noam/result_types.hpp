@@ -34,7 +34,7 @@ struct pure_result {
 
     // pure_result is a good boy
     constexpr bool good() const noexcept { return true; }
-    constexpr state_t new_state() const noexcept { return state; }
+    constexpr state_t get_state() const noexcept { return state; }
     constexpr decltype(auto) value() & { return v; }
     constexpr decltype(auto) value() const& { return v; }
     constexpr decltype(auto) value() && { return std::move(*this).v; }
@@ -56,7 +56,7 @@ class boolean_result {
     constexpr boolean_result(
         std::string_view initial, parse_result auto&& result) {
         if (result.good()) {
-            state = result.new_state();
+            state = result.get_state();
             value_ = true;
         } else {
             state = initial;
@@ -68,7 +68,7 @@ class boolean_result {
     // It's always good b/c it always has a value
     constexpr bool good() const noexcept { return true; }
     constexpr bool value() const { return value_; }
-    constexpr state_t new_state() const { return state; }
+    constexpr state_t get_state() const { return state; }
 };
 
 // used for obtaining the hidden state of the parser (e.g., for lookahead)
@@ -78,7 +78,7 @@ struct state_result {
     state_t state;
     constexpr bool good() const noexcept { return true; }
     constexpr state_t value() const { return state; }
-    constexpr state_t new_state() const { return state; }
+    constexpr state_t get_state() const { return state; }
 };
 
 template <class Value>
@@ -98,7 +98,7 @@ struct optional_result {
     optional_result& operator=(optional_result&&) = default;
 
     constexpr bool good() const noexcept { return true; }
-    constexpr state_t new_state() const noexcept { return state; }
+    constexpr state_t get_state() const noexcept { return state; }
     constexpr decltype(auto) value() & { return v; }
     constexpr decltype(auto) value() const& { return v; }
     constexpr decltype(auto) value() && { return std::move(*this).v; }
@@ -123,7 +123,7 @@ class standard_result {
     standard_result& operator=(standard_result&&) = default;
 
     constexpr bool good() const noexcept { return is_good; }
-    constexpr state_t new_state() const noexcept { return state; }
+    constexpr state_t get_state() const noexcept { return state; }
     constexpr decltype(auto) value() & { return v; }
     constexpr decltype(auto) value() const& { return v; }
     constexpr decltype(auto) value() && { return std::move(*this).v; }
@@ -132,7 +132,7 @@ template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
 
 // The result of fmap'ing a parser result. It preserves BaseResult.good() and
-// BaseResult.new_state(), however transform_result.value() is given by
+// BaseResult.get_state(), however transform_result.value() is given by
 // func(BaseResult.value())
 template <class BaseResult, class Func>
 struct transform_result : BaseResult {

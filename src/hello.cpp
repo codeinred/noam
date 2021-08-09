@@ -39,5 +39,5 @@ int main() {
     std::string_view str = "93289 hello";
     auto result = read_int().parse(str);
     std::cout << "Value: " << result.value() << '\n';
-    std::cout << "Remaining: '" << result.new_state() << "'\n";
+    std::cout << "Remaining: '" << result.get_state() << "'\n";
 }

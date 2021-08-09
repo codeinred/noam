@@ -35,7 +35,7 @@ struct await_parse {
         result = std::forward<Func>(func).parse(copy_state());
         if (result.good()) {
             // We only update the state if the parse succeeded
-            *state = result.new_state();
+            *state = result.get_state();
             return true;
         } else {
             // Don't update the state
@@ -76,7 +76,7 @@ struct co_parse_result {
     Value value_ {};
     bool has_result = false;
     constexpr bool good() const noexcept { return has_result; }
-    constexpr state_t new_state() const noexcept { return state_; }
+    constexpr state_t get_state() const noexcept { return state_; }
     constexpr decltype(auto) value() & noexcept { return value_; }
     constexpr decltype(auto) value() const& noexcept { return value_; }
     constexpr decltype(auto) value() && noexcept {
