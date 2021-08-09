@@ -116,21 +116,30 @@ constexpr auto require_prefix = [](std::string_view prefix) {
  *
  */
 constexpr auto lookahead = [](auto&& parser) {
-    using value_t = std::decay_t<decltype(parser.parse(state_t {}).get_value())>;
+    using value_t =
+        std::decay_t<decltype(parser.parse(state_t {}).get_value())>;
     return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
         auto result = parser.parse(state);
-        if constexpr (result_always_good_v<decltype(result)>) {
+
+        // If the result is lookahead_enabled, we can simply reset the state of
+        // the result without transforming it's type. Otherwise, we'll transform
+        // it into either a pure_result (if it's always good), or a
+        // standard_result (if it may not always be good)
+        if constexpr (lookahead_enabled_result<decltype(result)>) {
+            result.set_state(state);
+            return result;
+        } else if constexpr (result_always_good_v<decltype(result)>) {
             return pure_result {state, std::move(result).get_value()};
         } else {
             if (result.good()) {
-                return standard_result<value_t> {state, std::move(result).get_value()};
+                return standard_result<value_t> {
+                    state, std::move(result).get_value()};
             } else {
                 return standard_result<value_t> {};
             }
         }
     } / make_parser;
 };
-
 
 /**
  * @brief Takes a Parser a and returns Parser Maybe a (which will always
