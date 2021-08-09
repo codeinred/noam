@@ -54,6 +54,14 @@ class boolean_result {
     constexpr boolean_result(state_t state, bool value) noexcept
       : state(state)
       , value_(value) {}
+    /**
+     * @brief Creates a boolean_result such that the initial state is selected
+     * if the given result is bad, otherwise result.get_state() is selected. The
+     * value corresponds to result.good().
+     *
+     * @param initial The state to use if result.good() returns false
+     * @param result The result to transform into a boolean result
+     */
     constexpr boolean_result(
         std::string_view initial, parse_result auto&& result) {
         if (result.good()) {
@@ -142,7 +150,9 @@ struct transform_result : BaseResult {
     [[no_unique_address]] Func func;
     using BaseResult::good;
     using BaseResult::new_state;
-    constexpr decltype(auto) get_value() & { return func(BaseResult::get_value()); }
+    constexpr decltype(auto) get_value() & {
+        return func(BaseResult::get_value());
+    }
     constexpr decltype(auto) get_value() const& {
         return func(BaseResult::get_value());
     }

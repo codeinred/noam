@@ -73,6 +73,8 @@ auto map(F&& func, Parser&& p) {
  */
 constexpr auto test = [](auto&& p) {
     return parser {[=](state_t sv) -> boolean_result {
+        // Note that boolean_result will select p(sv).get_state() if p(sv) is
+        // good, and as a result no check needs to be done here
         return boolean_result(sv, p(sv));
     }};
 };
