@@ -102,10 +102,31 @@ constexpr auto test_prefix = [](std::string_view prefix) {
  */
 constexpr auto require_prefix = [](std::string_view prefix) {
     return [=](noam::state_t state) -> standard_result<std::string_view> {
-        if(state.starts_with(prefix)) {
+        if (state.starts_with(prefix)) {
             return {state.substr(prefix.size()), prefix};
         } else {
             return {};
+        }
+    } / make_parser;
+};
+
+/**
+ * @brief Parses a value with lookahead, so that no part of the string is
+ * actually consumed
+ *
+ */
+constexpr auto lookahead = [](auto&& parser) {
+    using value_t = std::decay_t<decltype(parser.parse(state_t {}).value())>;
+    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
+        auto result = parser.parse(state);
+        if constexpr (result_always_good_v<decltype(result)>) {
+            return pure_result {state, std::move(result).value()};
+        } else {
+            if (result.good()) {
+                return standard_result<value_t> {state, std::move(result).value()};
+            } else {
+                return standard_result<value_t> {};
+            }
         }
     } / make_parser;
 };
