@@ -64,4 +64,30 @@ constexpr parser parse_tabs = parse_repeated_char<'\t'>;
  * characters read
  */
 constexpr parser whitespace = parse_repeated_char<' ', '\t', '\n', '\r'>;
+
+/**
+ * @brief Parses a line. Newline and carriage return characters are not included
+ * in the parsed line.
+ *
+ */
+constexpr parser parse_line = [](state_t state) {
+    size_t size = state.size();
+    for (size_t i = 0; i < size; i++) {
+        char current = state[i];
+
+        // If one of them matches then we continue testing chars
+        if (current != '\n')
+            continue;
+
+        // line_size = i, unless there's a carriage return, in which case
+        // line_size = i - 1
+        size_t line_size = i;
+        if (i > 0 && state[i - 1] == '\r') {
+            line_size = i - 1;
+        }
+        return noam::pure_result {
+            state.substr(i + 1), state.substr(0, line_size)};
+    }
+    return noam::pure_result {state.substr(size), state};
+} / make_parser;
 } // namespace noam
