@@ -76,7 +76,7 @@ class boolean_result {
     boolean_result& operator=(boolean_result&&) = default;
     // It's always good b/c it always has a value
     constexpr bool good() const noexcept { return true; }
-    constexpr bool get_value() const { return value_; }
+    constexpr bool get_value() const noexcept { return value_; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
 };
@@ -87,7 +87,7 @@ class boolean_result {
 struct state_result {
     state_t state;
     constexpr bool good() const noexcept { return true; }
-    constexpr state_t get_value() const { return state; }
+    constexpr state_t get_value() const noexcept { return state; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
 };
@@ -111,9 +111,11 @@ struct optional_result {
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & { return v; }
-    constexpr decltype(auto) get_value() const& { return v; }
-    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & noexcept { return v; }
+    constexpr decltype(auto) get_value() const& noexcept { return v; }
+    constexpr decltype(auto) get_value() && noexcept {
+        return std::move(*this).v;
+    }
 };
 
 template <class Value>
@@ -137,9 +139,11 @@ class standard_result {
     constexpr bool good() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & { return v; }
-    constexpr decltype(auto) get_value() const& { return v; }
-    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & noexcept { return v; }
+    constexpr decltype(auto) get_value() const& noexcept { return v; }
+    constexpr decltype(auto) get_value() && noexcept {
+        return std::move(*this).v;
+    }
 };
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
