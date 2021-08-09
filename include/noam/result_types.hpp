@@ -156,13 +156,16 @@ struct transform_result : BaseResult {
     [[no_unique_address]] Func func;
     using BaseResult::good;
     using BaseResult::new_state;
-    constexpr decltype(auto) get_value() & {
+    constexpr decltype(auto) get_value() &
+        noexcept(noexcept(func(BaseResult::get_value()))) {
         return func(BaseResult::get_value());
     }
-    constexpr decltype(auto) get_value() const& {
+    constexpr decltype(auto) get_value() const&
+        noexcept(noexcept(func(BaseResult::get_value()))) {
         return func(BaseResult::get_value());
     }
-    constexpr decltype(auto) get_value() && {
+    constexpr decltype(auto) get_value() &&
+        noexcept(noexcept(std::move(*this).func(std::move(*this).BaseResult::get_value()))) {
         return std::move(*this).func(std::move(*this).BaseResult::get_value());
     }
 };
