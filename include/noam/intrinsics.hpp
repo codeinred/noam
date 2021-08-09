@@ -46,4 +46,22 @@ constexpr parser parse_repeated_char = [](state_t state) {
     }
     return noam::pure_result {state.substr(size), size};
 } / make_parser;
+
+/**
+ * @brief Parses 0 or more spaces and returns the number of characters read
+ *
+ */
+constexpr parser parse_spaces = parse_repeated_char<' '>;
+
+/**
+ * @brief Parses 0 or more tabs and returns the number of characters read
+ *
+ */
+constexpr parser parse_tabs = parse_repeated_char<'\t'>;
+
+/**
+ * @brief Parses 0 or more whitespace characters, and returns the number of
+ * characters read
+ */
+constexpr parser whitespace = parse_repeated_char<' ', '\t', '\n', '\r'>;
 } // namespace noam
