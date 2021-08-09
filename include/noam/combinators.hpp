@@ -63,9 +63,16 @@ auto map(F&& func, Parser&& p) {
     }};
 }
 
-constexpr auto test = [](auto&& any_parser) {
+/**
+ * @brief Takes a parser p and produces a new parser that generates a true if p
+ * succeeded and false if p failed
+ *
+ * @param p A parser whose output you wish to test
+ * @return parser<(lambda)> A new parser
+ */
+constexpr auto test = [](auto&& p) {
     return parser {[=](state_t sv) -> boolean_result {
-        return boolean_result(sv, any_parser(sv));
+        return boolean_result(sv, p(sv));
     }};
 };
 
