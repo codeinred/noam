@@ -114,6 +114,7 @@ constexpr auto require_prefix = [](std::string_view prefix) {
  * @brief Parses a value with lookahead, so that no part of the string is
  * actually consumed
  *
+ * @param parser the parser being given to the combinator to be transformed
  */
 constexpr auto lookahead = [](auto&& parser) {
     using value_t =
@@ -145,6 +146,7 @@ constexpr auto lookahead = [](auto&& parser) {
  * @brief Takes a Parser a and returns Parser Maybe a (which will always
  * succeed, but the value may be nullopt)
  *
+ * @param parser the parser being given to the combinator to be transformed
  */
 constexpr auto try_parse = [](auto&& parser) {
     return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
@@ -161,6 +163,7 @@ constexpr auto try_parse = [](auto&& parser) {
  * @brief Attempts to parse a value, but does so with lookahead (so no part of
  * the string is consumed)
  *
+ * @param parser the parser being given to the combinator to be transformed
  */
 constexpr auto try_lookahead = [](auto&& parser) {
     return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
