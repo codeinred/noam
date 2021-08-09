@@ -77,7 +77,8 @@ class boolean_result {
     // It's always good b/c it always has a value
     constexpr bool good() const noexcept { return true; }
     constexpr bool get_value() const { return value_; }
-    constexpr state_t get_state() const { return state; }
+    constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
 };
 
 // used for obtaining the hidden state of the parser (e.g., for lookahead)
@@ -87,7 +88,8 @@ struct state_result {
     state_t state;
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_value() const { return state; }
-    constexpr state_t get_state() const { return state; }
+    constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
 };
 
 template <class Value>
