@@ -147,4 +147,19 @@ constexpr auto try_parse = [](auto&& parser) {
                         : std::nullopt};
     } / make_parser;
 };
+
+/**
+ * @brief Attempts to parse a value, but does so with lookahead (so no part of
+ * the string is consumed)
+ *
+ */
+constexpr auto try_lookahead = [](auto&& parser) {
+    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
+        auto result = parser.parse(state);
+        return pure_result {
+            state, // Because we're doing lookahead, state doesn't get updated
+            result.good() ? std::optional {std::move(result).value()}
+                          : std::nullopt};
+    } / make_parser;
+};
 } // namespace noam
