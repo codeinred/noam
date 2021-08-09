@@ -50,6 +50,9 @@ class boolean_result {
     boolean_result() = default;
     boolean_result(boolean_result const&) = default;
     boolean_result(boolean_result&&) = default;
+    boolean_result(state_t state, bool value) noexcept
+      : state(state)
+      , value_(value) {}
     constexpr boolean_result(
         std::string_view initial, parse_result auto&& result) {
         if (result.good()) {
