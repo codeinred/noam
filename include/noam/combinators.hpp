@@ -78,6 +78,20 @@ constexpr auto test = [](auto&& p) {
 };
 
 /**
+ * @brief Takes a parser p and produces a new parser that generates a true if p
+ * succeeded and false if p failed. Does so with lookahead, so that no portion
+ * of the string is consumed
+ *
+ * @param p A parser whose output you wish to test
+ * @return parser<(lambda)> A new parser
+ */
+constexpr auto test_lookahead = [](auto&& p) {
+    return parser {[=](state_t sv) -> boolean_result {
+        return boolean_result(sv, p(sv).good());
+    }};
+};
+
+/**
  * @brief Creates a parser that returns true if a prefix is matched and false
  * otherwise
  *
