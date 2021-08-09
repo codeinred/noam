@@ -31,4 +31,19 @@ constexpr parser parse_ulong_long = parse_charconv<unsigned long long>;
 constexpr parser parse_float = parse_charconv<float>;
 constexpr parser parse_double = parse_charconv<double>;
 constexpr parser parse_long_double = parse_charconv<long double>;
+
+template <char... chars>
+constexpr parser parse_repeated_char = [](state_t state) {
+    size_t size = state.size();
+    for (size_t i = 0; i < size; i++) {
+        char current = state[i];
+
+        // If one of them matches then we continue testing chars
+        if (((chars == current) || ...))
+            continue;
+
+        return noam::pure_result {state.substr(i), i};
+    }
+    return noam::pure_result {state.substr(size), size};
+} / make_parser;
 } // namespace noam

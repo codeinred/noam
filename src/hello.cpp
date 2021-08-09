@@ -1,6 +1,7 @@
 #include <iostream>
 #include <noam/co_parse.hpp>
 #include <noam/combinators.hpp>
+#include <noam/intrinsics.hpp>
 #include <vector>
 
 bool is_digit(char c) { return '0' <= c && c <= '9'; }
