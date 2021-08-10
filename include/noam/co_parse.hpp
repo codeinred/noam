@@ -21,7 +21,7 @@ co_parse<T>&& move_if_necessary(co_parse<T>& p) {
 }
 
 template <class Func>
-struct await_parse {
+struct await_parser {
     Func func {};
     // This is provided by the promise type via await_transform
     // It's non-owned so using a pointer here is fine
@@ -57,7 +57,7 @@ struct await_parse {
     }
 };
 template <class F>
-await_parse(F func, state_t*) -> await_parse<F>;
+await_parser(F func, state_t*) -> await_parser<F>;
 
 template <class T>
 struct parser_promise {
@@ -81,13 +81,13 @@ struct parser_promise {
     }
     template <any_parser F>
     auto await_transform(F&& func) {
-        return await_parse<std::decay_t<F>> {
+        return await_parser<std::decay_t<F>> {
             std::forward<F>(func), &current_state};
     };
 
     template <class U>
     auto await_transform(co_parse<U> (*_coro_ptr)()) {
-        return await_parse {_coro_ptr(), &current_state};
+        return await_parser {_coro_ptr(), &current_state};
     }
 
     void unhandled_exception() {
