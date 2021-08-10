@@ -59,47 +59,25 @@ struct await_parse {
 template <class F>
 await_parse(F func, state_t*) -> await_parse<F>;
 
-template <any_parser... F>
-auto either(F&&... funcs) {
-    using result_t = std::common_type_t<std::invoke_result_t<F, state_t>...>;
-    return [... f = std::forward<F>(funcs)](state_t state) -> result_t {
-        result_t result;
-        // get results until one of them returns true
-        ((result = move_if_necessary(f)(state_t(state))).good() || ...);
-        return result;
-    };
-}
-
-template <class Value>
-struct co_parse_result {
-    state_t state_ {};
-    Value value_ {};
-    bool has_result = false;
-    constexpr bool good() const noexcept { return has_result; }
-    constexpr state_t get_state() const noexcept { return state_; }
-    constexpr decltype(auto) get_value() & noexcept { return value_; }
-    constexpr decltype(auto) get_value() const& noexcept { return value_; }
-    constexpr decltype(auto) get_value() && noexcept {
-        return std::move(*this).value_;
-    }
-};
-
 template <class T>
 struct parser_promise {
-    co_parse_result<T> result;
     state_t current_state;
+    T value;
+    bool is_good = false;
     void set_initial_state(state_t state) {
-        result.state_ = state;
         current_state = state;
     }
 
     constexpr std::suspend_always initial_suspend() noexcept { return {}; }
     constexpr std::suspend_always final_suspend() noexcept { return {}; }
 
-    void return_value(T value) {
-        result.value_ = std::move(value);
-        result.has_result = true;
-        result.state_ = current_state;
+    void return_value(T const& value) {
+        this->value = value;
+        is_good = true;
+    }
+    void return_value(T&& value) {
+        this->value = std::move(value);
+        is_good = true;
     }
     template <any_parser F>
     auto await_transform(F&& func) {
@@ -114,12 +92,20 @@ struct parser_promise {
 
     void unhandled_exception() {
         // Fuck this shit we just cancelling it all
-        result.has_result = false;
+        is_good = false;
     }
 
     co_parse<T> get_return_object() {
         return co_parse<T>(
             std::coroutine_handle<parser_promise>::from_promise(*this));
+    }
+
+    standard_result<T> get_parse_result() && {
+        if (is_good) {
+            return standard_result<T>(current_state, std::move(value));
+        } else {
+            return standard_result<T>();
+        }
     }
 };
 template <class T>
@@ -136,15 +122,15 @@ class co_parse {
 
     // This should only ever be run once, so it must be run either
     // on a prvalue co_parse or a moved co_parse
-    co_parse_result<T> operator()(state_t state) && {
+    standard_result<T> operator()(state_t state) && {
         handle_.promise().set_initial_state(state);
         handle_.resume();
-        return std::move(handle_.promise().result);
+        return std::move(handle_.promise()).get_parse_result();
     }
-    co_parse_result<T> parse(state_t state) && {
+    standard_result<T> parse(state_t state) && {
         handle_.promise().set_initial_state(state);
         handle_.resume();
-        return std::move(handle_.promise().result);
+        return std::move(handle_.promise()).get_parse_result();
     }
     ~co_parse() { handle_.destroy(); }
 };
