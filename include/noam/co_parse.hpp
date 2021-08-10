@@ -10,17 +10,6 @@ namespace noam {
 template <class T>
 class co_parse;
 
-// workaround until I figure out how to make co_parse idempotent
-template <class F>
-F& move_if_necessary(F& f) {
-    return f;
-}
-
-template <class T>
-co_parse<T>&& move_if_necessary(co_parse<T>& p) {
-    return std::move(p);
-}
-
 template <class T>
 struct parse_promise {
     state_t current_state;
