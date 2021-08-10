@@ -1,4 +1,5 @@
 #pragma once
+#include <noam/coupling/await_parser.hpp>
 #include <noam/concepts.hpp>
 #include <noam/result_types.hpp>
 #include <noam/util/stdlib_coroutine.hpp>
@@ -19,45 +20,6 @@ template <class T>
 co_parse<T>&& move_if_necessary(co_parse<T>& p) {
     return std::move(p);
 }
-
-template <class Func>
-struct await_parser {
-    Func func {};
-    // This is provided by the promise type via await_transform
-    // It's non-owned so using a pointer here is fine
-    state_t* state = nullptr;
-
-    using result_t = decltype(std::declval<Func>().parse(state_t {}));
-    result_t result;
-    // Gets a copy of the internal state
-    constexpr state_t copy_state() const noexcept { return *state; }
-    constexpr bool await_ready() noexcept {
-        result = std::forward<Func>(func).parse(copy_state());
-        if (result.good()) {
-            // We only update the state if the parse succeeded
-            *state = result.get_state();
-            return true;
-        } else {
-            // Don't update the state
-            return false;
-        }
-    }
-    // If the result wasn't good, we're shutting the whole thing down.
-    // await_suspend is suspending the whole-ass m'fucking operation
-    constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
-
-    constexpr decltype(auto) await_resume() & noexcept {
-        return std::forward<decltype(result)>(result).get_value();
-    }
-    constexpr decltype(auto) await_resume() const& noexcept {
-        return result.get_value();
-    }
-    constexpr decltype(auto) await_resume() && noexcept {
-        return std::move(*this).result.get_value();
-    }
-};
-template <class F>
-await_parser(F func, state_t*) -> await_parser<F>;
 
 template <class T>
 struct parse_promise {
