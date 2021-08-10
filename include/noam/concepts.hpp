@@ -71,4 +71,15 @@ constexpr bool result_always_good_v = result_traits<Result>::always_good;
 
 template <class Result>
 constexpr bool result_is_🐶 = result_traits<Result>::always_good;
+
+/**
+ * @brief Represents any result type that is always good. This guarantee allows
+ * certain optimizations to take place with regard to the implementation of
+ * things like noam::await_parser.
+ *
+ * @tparam Result the type to test
+ */
+template <class Result>
+concept always_good_result =
+    parse_result<Result> && result_always_good_v<Result>;
 } // namespace noam
