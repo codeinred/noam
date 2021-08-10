@@ -4,19 +4,19 @@
 #include <noam/util/stdlib_coroutine.hpp>
 
 namespace noam {
-template <class Func>
+template <class Parser>
 struct await_parser {
-    Func func {};
+    Parser parser {};
     // This is provided by the promise type via await_transform
     // It's non-owned so using a pointer here is fine
     state_t* state = nullptr;
 
-    using result_t = decltype(std::declval<Func>().parse(state_t {}));
+    using result_t = decltype(std::declval<Parser>().parse(state_t {}));
     result_t result;
     // Gets a copy of the internal state
     constexpr state_t copy_state() const noexcept { return *state; }
     constexpr bool await_ready() noexcept {
-        result = std::forward<Func>(func).parse(copy_state());
+        result = std::forward<Parser>(parser).parse(copy_state());
         if (result.good()) {
             // We only update the state if the parse succeeded
             *state = result.get_state();
@@ -40,6 +40,8 @@ struct await_parser {
         return std::move(*this).result.get_value();
     }
 };
-template <class F>
-await_parser(F func, state_t*) -> await_parser<F>;
+template <class Parser>
+await_parser(Parser, state_t*) -> await_parser<Parser>;
+
+
 } // namespace noam
