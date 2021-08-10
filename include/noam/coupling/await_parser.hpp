@@ -40,8 +40,25 @@ struct await_parser {
         return std::move(*this).result.get_value();
     }
 };
+
+template <always_good_parser Parser>
+struct await_parser<Parser> {
+    Parser parser {};
+    state_t* state = nullptr;
+    constexpr state_t copy_state() const noexcept { return *state; }
+
+    constexpr bool await_ready() const noexcept {
+        return true;
+    }
+    constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
+
+    constexpr decltype(auto) await_resume() {
+        auto result = std::move(parser).parse(copy_state());
+        *state = result.get_state();
+        return std::move(result).get_value();
+    }
+};
+
 template <class Parser>
 await_parser(Parser, state_t*) -> await_parser<Parser>;
-
-
 } // namespace noam
