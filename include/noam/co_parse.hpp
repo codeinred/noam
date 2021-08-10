@@ -1,6 +1,6 @@
 #pragma once
-#include <noam/coupling/await_parser.hpp>
 #include <noam/concepts.hpp>
+#include <noam/coupling/await_parser.hpp>
 #include <noam/result_types.hpp>
 #include <noam/util/stdlib_coroutine.hpp>
 #include <optional>
@@ -8,16 +8,12 @@
 
 namespace noam {
 template <class T>
-class co_parse;
-
-template <class T>
 struct parse_promise {
+    using handle_t = std::coroutine_handle<parse_promise>;
     state_t current_state;
     T value;
     bool is_good = false;
-    void set_initial_state(state_t state) {
-        current_state = state;
-    }
+    void set_initial_state(state_t state) { current_state = state; }
 
     constexpr std::suspend_always initial_suspend() noexcept { return {}; }
     constexpr std::suspend_always final_suspend() noexcept { return {}; }
@@ -37,7 +33,7 @@ struct parse_promise {
     };
 
     template <class U>
-    auto await_transform(co_parse<U> (*_coro_ptr)()) {
+    auto await_transform(U (*_coro_ptr)()) {
         return await_parser {_coro_ptr(), &current_state};
     }
 
@@ -46,10 +42,15 @@ struct parse_promise {
         is_good = false;
     }
 
-    co_parse<T> get_return_object() {
-        return co_parse<T>(
-            std::coroutine_handle<parse_promise>::from_promise(*this));
-    }
+    /**
+     * @brief Obtains the return object.
+     *
+     * This method returns a coroutine handle to the coroutine associated with
+     * this promise object.
+     *
+     * @return std::coroutine_handle<parse_promise>
+     */
+    handle_t get_return_object() { return handle_t::from_promise(*this); }
 
     standard_result<T> get_parse_result() && {
         if (is_good) {
@@ -61,7 +62,8 @@ struct parse_promise {
 };
 template <class T>
 class co_parse {
-    std::coroutine_handle<parse_promise<T>> handle_;
+    using handle_t = std::coroutine_handle<parse_promise<T>>;
+    handle_t handle_;
 
    public:
     using promise_type = parse_promise<T>;
