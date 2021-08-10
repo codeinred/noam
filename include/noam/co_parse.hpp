@@ -60,7 +60,7 @@ template <class F>
 await_parser(F func, state_t*) -> await_parser<F>;
 
 template <class T>
-struct parser_promise {
+struct parse_promise {
     state_t current_state;
     T value;
     bool is_good = false;
@@ -97,7 +97,7 @@ struct parser_promise {
 
     co_parse<T> get_return_object() {
         return co_parse<T>(
-            std::coroutine_handle<parser_promise>::from_promise(*this));
+            std::coroutine_handle<parse_promise>::from_promise(*this));
     }
 
     standard_result<T> get_parse_result() && {
@@ -110,10 +110,10 @@ struct parser_promise {
 };
 template <class T>
 class co_parse {
-    std::coroutine_handle<parser_promise<T>> handle_;
+    std::coroutine_handle<parse_promise<T>> handle_;
 
    public:
-    using promise_type = parser_promise<T>;
+    using promise_type = parse_promise<T>;
     co_parse() = default;
     co_parse(co_parse&& d) noexcept
       : handle_(std::exchange(d.handle_, nullptr)) {}
