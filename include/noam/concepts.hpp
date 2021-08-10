@@ -82,4 +82,14 @@ constexpr bool result_is_🐶 = result_traits<Result>::always_good;
 template <class Result>
 concept always_good_result =
     parse_result<Result> && result_always_good_v<Result>;
+
+/**
+ * @brief Represents a parser that produces an always_good_result.
+ *
+ * @tparam Parser the type to test
+ */
+template <class Parser>
+concept always_good_parser = any_parser<Parser> && requires(Parser parser, state_t state) {
+    { parser.parse(state) } -> always_good_result;
+};
 } // namespace noam
