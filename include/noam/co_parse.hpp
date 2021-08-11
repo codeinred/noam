@@ -11,7 +11,7 @@ namespace noam {
 template <class T>
 class parser<parse_promise<T>> {
     using handle_t = std::coroutine_handle<parse_promise<T>>;
-    handle_t handle_;
+    handle_t handle_ = nullptr;
 
    public:
     using promise_type = parse_promise<T>;
@@ -21,6 +21,13 @@ class parser<parse_promise<T>> {
     parser(std::coroutine_handle<promise_type> handle) noexcept
       : handle_(handle) {}
 
+    handle_t release_handle() && {
+      return std::exchange(handle_, nullptr);
+    }
+
+    standard_result<T> parse(state_t state) const& {
+        return parser(handle_.promise().clone_frame()).parse(state);
+    }
     /**
      * @brief Parses the input state, returning a standard_result<T>
      *
@@ -37,9 +44,14 @@ class parser<parse_promise<T>> {
         handle_.resume();
         return std::move(handle_.promise()).get_parse_result();
     }
-    ~parser() { handle_.destroy(); }
+    ~parser() { if(handle_) handle_.destroy(); }
 };
 
 template <class T>
 using co_parse = parser<parse_promise<T>>;
 } // namespace noam
+
+template <class T, class... Args>
+struct std::coroutine_traits<noam::co_parse<T>, Args...> {
+    using promise_type = noam::parse_promise_specialization<T, Args...>;
+};
