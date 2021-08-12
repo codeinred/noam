@@ -2,7 +2,7 @@
 #include <noam/concepts.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
-#include <noam/util/then_operator.hpp>
+#include <noam/operators.hpp>
 
 // This file holds functios that return parsers based on inputs
 

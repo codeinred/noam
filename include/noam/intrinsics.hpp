@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
-#include <noam/util/then_operator.hpp>
+#include <noam/operators.hpp>
 
 namespace noam {
 template <class T>
