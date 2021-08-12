@@ -20,14 +20,24 @@ constexpr parser parse_charconv =
     }
 } / make_parser;
 
+constexpr parser parse_short = parse_charconv<short>;
+constexpr parser parse_ushort = parse_charconv<unsigned short>;
 constexpr parser parse_int = parse_charconv<int>;
 constexpr parser parse_uint = parse_charconv<unsigned int>;
-constexpr parser parse_int64 = parse_charconv<int64_t>;
-constexpr parser parse_uint64 = parse_charconv<uint64_t>;
 constexpr parser parse_long = parse_charconv<long>;
 constexpr parser parse_ulong = parse_charconv<unsigned long>;
 constexpr parser parse_long_long = parse_charconv<long long>;
 constexpr parser parse_ulong_long = parse_charconv<unsigned long long>;
+
+constexpr parser parse_int8 = parse_charconv<int8_t>;
+constexpr parser parse_uint8 = parse_charconv<uint8_t>;
+constexpr parser parse_int16 = parse_charconv<int16_t>;
+constexpr parser parse_uint16 = parse_charconv<uint16_t>;
+constexpr parser parse_int32 = parse_charconv<int32_t>;
+constexpr parser parse_uint32 = parse_charconv<uint32_t>;
+constexpr parser parse_int64 = parse_charconv<int64_t>;
+constexpr parser parse_uint64 = parse_charconv<uint64_t>;
+
 constexpr parser parse_float = parse_charconv<float>;
 constexpr parser parse_double = parse_charconv<double>;
 constexpr parser parse_long_double = parse_charconv<long double>;
