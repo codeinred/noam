@@ -75,7 +75,7 @@ constexpr auto test = [](auto&& p) {
     return parser {[=](state_t sv) -> boolean_result {
         // Note that boolean_result will select p(sv).get_state() if p(sv) is
         // good, and as a result no check needs to be done here
-        return boolean_result(sv, p(sv));
+        return boolean_result(sv, p.parse(sv));
     }};
 };
 
@@ -169,7 +169,7 @@ constexpr auto try_parse = [](auto&& parser) {
         auto result = parser.parse(state);
         bool result_good = result.good();
         return pure_result {
-            result_good ? result.state() : state,
+            result_good ? result.get_state() : state,
             result_good ? std::optional {std::move(result).get_value()}
                         : std::nullopt};
     } / make_parser;
