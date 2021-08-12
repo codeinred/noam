@@ -12,33 +12,6 @@ bool check(long double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-
 
 enum class color { red, green, blue };
 
-template <>
-struct fmt::formatter<color> : formatter<string_view> {
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    auto format(color c, FormatContext& ctx) {
-        string_view name = "unknown";
-        switch (c) {
-            case color::red: name = "red"; break;
-            case color::green: name = "green"; break;
-            case color::blue: name = "blue"; break;
-        }
-        return formatter<string_view>::format(name, ctx);
-    }
-};
-
-template <class T>
-struct fmt::formatter<std::optional<T>> : fmt::formatter<T> {
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    decltype(auto) format(std::optional<T> opt, FormatContext& ctx) {
-        if (opt) {
-            return fmt::format_to(ctx.out(), "[just: {}]", *opt);
-        } else {
-            return fmt::format_to(ctx.out(), "[nothing]");
-        }
-    }
-};
 template <noam::parse_result R>
 struct fmt::formatter<R> : fmt::formatter<std::decay_t<decltype(std::declval<R>().get_value())>> {
     using base = fmt::formatter<std::decay_t<decltype(std::declval<R>().get_value())>>;
