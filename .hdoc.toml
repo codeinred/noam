@@ -1,0 +1,11 @@
+[project]
+name = "noam parsing library"
+version = "1.0.0"
+
+# Optional, adding this will enable direct links from the documentation
+# to your source code.
+git_repo_url = "https://github.com/codeinred/noam/blob/main/"
+
+[paths]
+compile_commands = "build/compile_commands.json"
+output_dir = "hdoc-output"
