@@ -92,6 +92,12 @@ endif()
 # it as a test
 if((EXISTS "${working_dir}/test/") AND (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND BUILD_TESTING)
     include(CTest)
+    include(FetchContent)
+    FetchContent_Declare(
+        fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    )
+    FetchContent_MakeAvailable(fmt)
 
     file(GLOB all_tests "test/*.cpp")
 
@@ -99,6 +105,7 @@ if((EXISTS "${working_dir}/test/") AND (${CMAKE_PROJECT_NAME} STREQUAL ${project
         get_filename_component(test_name ${file_name} NAME_WLE)
         add_executable("${test_name}" "${file_name}")
         target_link_libraries("${test_name}" PRIVATE ${libname})
+        target_link_libraries("${test_name}" PRIVATE fmt)
         target_link_libraries("${test_name}" PRIVATE Threads::Threads)
         add_test(NAME "${test_name}" COMMAND "${test_name}")
         message("[test: ${test_name}]")
