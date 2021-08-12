@@ -24,7 +24,7 @@ pure_result(state_t, Value) -> pure_result<Value>;
 
 class boolean_result {
     state_t state;
-    bool value_;
+    bool value;
 
    public:
     boolean_result() = default;
@@ -32,7 +32,7 @@ class boolean_result {
     boolean_result(boolean_result&&) = default;
     constexpr boolean_result(state_t state, bool value) noexcept
       : state(state)
-      , value_(value) {}
+      , value(value) {}
     /**
      * @brief Creates a boolean_result such that the initial state is selected
      * if the given result is bad, otherwise result.get_state() is selected. The
@@ -45,17 +45,17 @@ class boolean_result {
         std::string_view initial, parse_result auto&& result) {
         if (result.good()) {
             state = result.get_state();
-            value_ = true;
+            value = true;
         } else {
             state = initial;
-            value_ = false;
+            value = false;
         }
     }
     boolean_result& operator=(boolean_result const&) = default;
     boolean_result& operator=(boolean_result&&) = default;
     // It's always good b/c it always has a value
     constexpr bool good() const noexcept { return true; }
-    constexpr bool get_value() const noexcept { return value_; }
+    constexpr bool get_value() const noexcept { return value; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
 };
