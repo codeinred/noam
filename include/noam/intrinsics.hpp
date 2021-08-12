@@ -1,9 +1,9 @@
 #pragma once
 #include <charconv>
 #include <cstddef>
+#include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
-#include <noam/operators.hpp>
 
 namespace noam {
 template <class T>
@@ -31,6 +31,25 @@ constexpr parser parse_ulong_long = parse_charconv<unsigned long long>;
 constexpr parser parse_float = parse_charconv<float>;
 constexpr parser parse_double = parse_charconv<double>;
 constexpr parser parse_long_double = parse_charconv<long double>;
+
+/**
+ * @brief Matches strings starting with the characters `chars...`. E.g,
+ * `parse_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>` matches strings starting
+ * with "hello"
+ *
+ * @tparam chars the prefix to match
+ */
+template <char... chars>
+constexpr parser parse_constexpr_prefix =
+    [](state_t state) -> match_constexpr_prefix_result<chars...> {
+    int i = 0;
+    if (state.size() >= sizeof...(chars) && ((state[i++] == chars) && ...)) {
+        state.remove_prefix(sizeof...(chars));
+        return match_constexpr_prefix_result<chars...>(state);
+    } else {
+        return {};
+    }
+} / make_parser;
 
 template <char... chars>
 constexpr parser parse_repeated_char = [](state_t state) {

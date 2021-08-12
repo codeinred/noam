@@ -127,6 +127,29 @@ class standard_result {
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
 
+template <char... ch>
+struct match_constexpr_prefix_result {
+   private:
+    constexpr static char ch_array[sizeof...(ch) + 1] {ch..., '\0'};
+    /**
+     * @brief The prefix that this result matches
+     *
+     */
+    constexpr static std::string_view value {ch_array, sizeof...(ch)};
+    state_t state;
+    bool is_good = false;
+
+   public:
+    match_constexpr_prefix_result() = default;
+    match_constexpr_prefix_result(state_t state) noexcept
+      : state(state)
+      , is_good(true) {}
+    constexpr bool good() const noexcept { return is_good; }
+    constexpr state_t get_state() const noexcept { return state; }
+    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
+    constexpr std::string_view get_value() const noexcept { return value; }
+};
+
 // The result of fmap'ing a parser result. It preserves BaseResult.good() and
 // BaseResult.get_state(), however transform_result.get_value() is given by
 // func(BaseResult.get_value())
@@ -135,16 +158,16 @@ struct transform_result : BaseResult {
     [[no_unique_address]] Func func;
     using BaseResult::good;
     using BaseResult::new_state;
-    constexpr decltype(auto) get_value() &
-        noexcept(noexcept(func(BaseResult::get_value()))) {
+    constexpr decltype(auto)
+    get_value() & noexcept(noexcept(func(BaseResult::get_value()))) {
         return func(BaseResult::get_value());
     }
-    constexpr decltype(auto) get_value() const&
-        noexcept(noexcept(func(BaseResult::get_value()))) {
+    constexpr decltype(auto)
+    get_value() const& noexcept(noexcept(func(BaseResult::get_value()))) {
         return func(BaseResult::get_value());
     }
-    constexpr decltype(auto) get_value() &&
-        noexcept(noexcept(std::move(*this).func(std::move(*this).BaseResult::get_value()))) {
+    constexpr decltype(auto) get_value() && noexcept(noexcept(
+        std::move(*this).func(std::move(*this).BaseResult::get_value()))) {
         return std::move(*this).func(std::move(*this).BaseResult::get_value());
     }
 };
