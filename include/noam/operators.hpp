@@ -1,5 +1,7 @@
 #pragma once
 #include <concepts>
+#include <noam/parser.hpp>
+#include <noam/result_types.hpp>
 #include <utility>
 
 namespace noam {
@@ -16,5 +18,24 @@ namespace noam {
 template <class Input, std::invocable<Input> Func>
 constexpr auto operator/(Input&& input, Func&& func) {
     return std::forward<Func>(func)(std::forward<Input>(input));
+}
+
+template <class Parser1, class Parser2>
+constexpr auto operator>>(Parser1&& p1, Parser2&& p2) {
+    return [p1 = std::forward<Parser1>(p1),
+            p2 = std::forward<Parser2>(p2)](noam::state_t state)
+               -> standard_result<decltype(p2.parse(state).get_value())> {
+        auto r1 = p1.parse(state);
+        if (r1.good()) {
+            auto r2 = p2.parse(r1.get_state());
+            if (r2.good()) {
+                return {r2.get_state(), std::move(r2).get_value()};
+            } else {
+                return {};
+            }
+        } else {
+            return {};
+        }
+    } / make_parser;
 }
 } // namespace noam
