@@ -9,15 +9,15 @@ using std::optional;
 template <class Value>
 struct pure_result {
     state_t state;
-    Value v;
+    Value value;
 
     // pure_result is a good boy
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & { return v; }
-    constexpr decltype(auto) get_value() const& { return v; }
-    constexpr decltype(auto) get_value() && { return std::move(*this).v; }
+    constexpr decltype(auto) get_value() & { return value; }
+    constexpr decltype(auto) get_value() const& { return value; }
+    constexpr decltype(auto) get_value() && { return std::move(*this).value; }
 };
 template <class Value>
 pure_result(state_t, Value) -> pure_result<Value>;
