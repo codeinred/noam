@@ -109,4 +109,10 @@ constexpr parser parse_line = [](state_t state) {
     }
     return noam::pure_result {state.substr(size), state};
 } / make_parser;
+
+template <char... separator>
+constexpr parser parse_separator =
+    whitespace >> parse_constexpr_prefix<separator...> >> whitespace;
+
+constexpr parser parse_comma_separator = parse_separator<','>;
 } // namespace noam
