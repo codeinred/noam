@@ -25,29 +25,28 @@ constexpr auto pure(Value&& value) {
  * by parser and combines them using fold
  *
  * @param parser the parser to fold
- * @param fold the operation with which to combine values produced by parser
- * @return parser<(fold_left1:lambda)> a parser that repeatedly obtains values
+ * @param op the operation with which to combine values produced by parser
+ * @return parser<(fold_left:lambda)> a parser that repeatedly obtains values
  * by parsing the input with parser, then folds those values using fold
  */
 template <class Parser, class Op>
-constexpr auto fold_left(Parser&& parser, Op&& fold) {
+constexpr auto fold_left(Parser&& parser, Op&& op) {
     using value_t = parser_value_t<Parser>;
-    return
-        [parser = std::forward<Parser>(parser), fold = std::forward<Op>(fold)](
-            state_t state) -> noam::standard_result<value_t> {
-            auto result = parser.parse(state);
-            if (!result.good()) {
-                return {};
-            }
+    return [parser = std::forward<Parser>(parser), op = std::forward<Op>(op)](
+               state_t state) -> noam::standard_result<value_t> {
+        auto result = parser.parse(state);
+        if (!result.good()) {
+            return {};
+        }
+        state = result.get_state();
+        value_t value = result.get_value();
+        for (result = parser.parse(state); result.good();
+             result = parser.parse(state)) {
+            value = op(value, result.get_value());
             state = result.get_state();
-            value_t value = result.get_value();
-            for (result = parser.parse(state); result.good();
-                 result = parser.parse(state)) {
-                value = fold(value, result.get_value());
-                state = result.get_state();
-            }
-            return noam::standard_result {state, value};
-        } / make_parser;
+        }
+        return noam::standard_result {state, value};
+    } / make_parser;
 }
 
 /**
