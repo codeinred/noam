@@ -71,11 +71,11 @@ auto map(F&& func, Parser&& p) {
  * @param p A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
-constexpr auto test = [](auto&& p) {
-    return parser {[=](state_t sv) -> boolean_result {
+constexpr auto test = []<class Parser>(Parser&& parser) {
+    return noam::parser {[parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
         // Note that boolean_result will select p(sv).get_state() if p(sv) is
         // good, and as a result no check needs to be done here
-        return boolean_result(sv, p.parse(sv));
+        return boolean_result(sv, parser.parse(sv));
     }};
 };
 
@@ -112,9 +112,9 @@ constexpr auto test_then = []<class P, class F>(P&& parser, F&& func) {
  * @param p A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
-constexpr auto test_lookahead = [](auto&& p) {
-    return parser {[=](state_t sv) -> boolean_result {
-        return boolean_result(sv, p(sv).good());
+constexpr auto test_lookahead = []<class Parser>(Parser&& p) {
+    return parser {[p = std::forward<Parser>(p)](state_t sv) -> boolean_result {
+        return boolean_result(sv, p.parse(sv).good());
     }};
 };
 
@@ -157,20 +157,20 @@ constexpr auto require_prefix = [](std::string_view prefix) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto lookahead = [](auto&& parser) {
-    using value_t =
-        std::decay_t<decltype(parser.parse(state_t {}).get_value())>;
-    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
-        auto result = parser.parse(state);
+constexpr auto lookahead = []<class Parser>(Parser&& parser) {
+    using result_t = parser_result_t<Parser>;
+    using value_t = parser_value_t<Parser>;
+    return [parser = std::forward<Parser>(parser)](state_t state) {
+        result_t result = parser.parse(state);
 
         // If the result is lookahead_enabled, we can simply reset the state of
         // the result without transforming it's type. Otherwise, we'll transform
         // it into either a pure_result (if it's always good), or a
         // standard_result (if it may not always be good)
-        if constexpr (lookahead_enabled_result<decltype(result)>) {
+        if constexpr (lookahead_enabled_result<result_t>) {
             result.set_state(state);
             return result;
-        } else if constexpr (result_always_good_v<decltype(result)>) {
+        } else if constexpr (result_always_good_v<result_t>) {
             return pure_result {state, std::move(result).get_value()};
         } else {
             if (result.good()) {
@@ -189,8 +189,8 @@ constexpr auto lookahead = [](auto&& parser) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto try_parse = [](auto&& parser) {
-    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
+constexpr auto try_parse = []<class Parser>(Parser&& parser) {
+    return [parser = std::forward<Parser>(parser)](state_t state) {
         auto result = parser.parse(state);
         bool result_good = result.good();
         return pure_result {
@@ -206,8 +206,8 @@ constexpr auto try_parse = [](auto&& parser) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto try_lookahead = [](auto&& parser) {
-    return [parser = std::forward<decltype(parser)>(parser)](state_t state) {
+constexpr auto try_lookahead = []<class Parser>(Parser&& parser) {
+    return [parser = std::forward<Parser>(parser)](state_t state) {
         auto result = parser.parse(state);
         return pure_result {
             state, // Because we're doing lookahead, state doesn't get updated

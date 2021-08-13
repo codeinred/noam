@@ -13,8 +13,8 @@ bool check(long double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-
 enum class color { red, green, blue };
 
 template <noam::parse_result R>
-struct fmt::formatter<R> : fmt::formatter<std::decay_t<decltype(std::declval<R>().get_value())>> {
-    using base = fmt::formatter<std::decay_t<decltype(std::declval<R>().get_value())>>;
+struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
+    using base = fmt::formatter<noam::result_value_t<R>>;
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     decltype(auto) format(R const& result, FormatContext& ctx) {

@@ -8,6 +8,7 @@ using std::optional;
 
 template <class Value>
 struct pure_result {
+    using value_type = Value;
     state_t state;
     Value value;
 
@@ -27,6 +28,7 @@ class boolean_result {
     bool value;
 
    public:
+    using value_type = bool;
     boolean_result() = default;
     boolean_result(boolean_result const&) = default;
     boolean_result(boolean_result&&) = default;
@@ -64,6 +66,7 @@ class boolean_result {
 // this is not impure since it cannot be used to modify that state
 // Rather, state_result is a Good Boy b/c it always produces a value! 🐶
 struct state_result {
+    using value_type = state_t;
     state_t state;
     constexpr bool good() const noexcept { return true; }
     constexpr state_t get_value() const noexcept { return state; }
@@ -77,6 +80,7 @@ struct optional_result {
     std::optional<Value> v {};
 
    public:
+    using value_type = std::optional<Value>;
     optional_result(state_t state) noexcept
       : state(state) {}
     optional_result(state_t state, Value value)
@@ -105,6 +109,7 @@ class standard_result {
     bool is_good = false;
 
    public:
+    using value_type = Value;
     standard_result() = default;
     standard_result(state_t state, Value value)
       : state(state)
@@ -140,6 +145,7 @@ struct match_constexpr_prefix_result {
     bool is_good = false;
 
    public:
+    using value_type = std::string_view;
     match_constexpr_prefix_result() = default;
     match_constexpr_prefix_result(state_t state) noexcept
       : state(state)
@@ -155,6 +161,7 @@ struct match_constexpr_prefix_result {
 // func(BaseResult.get_value())
 template <class BaseResult, class Func>
 struct transform_result : BaseResult {
+    using value_type = result_value_t<BaseResult>;
     [[no_unique_address]] Func func;
     using BaseResult::good;
     using BaseResult::new_state;

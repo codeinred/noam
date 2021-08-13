@@ -10,6 +10,7 @@
 namespace noam {
 template <class T>
 struct co_result : standard_result<T> {
+    using value_type = T;
     using base_t = standard_result<T>;
     using promise_t = parse_promise<T>;
     using handle_t = std::coroutine_handle<promise_t>;

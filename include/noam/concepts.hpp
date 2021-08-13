@@ -73,6 +73,32 @@ template <class Result>
 constexpr bool result_is_🐶 = result_traits<Result>::always_good;
 
 /**
+ * @brief Obtains the value type produced by the result
+ *
+ * @tparam Result the result type
+ */
+template <class Result>
+using result_value_t = typename Result::value_type;
+
+/**
+ * @brief Returns the result type produced by a parser, aka
+ * decltype(Parser.parse(...))
+ *
+ * @tparam Parser
+ */
+template <class Parser>
+using parser_result_t = std::decay_t<decltype(std::declval<Parser>().parse(
+    std::declval<noam::state_t>()))>;
+
+/**
+ * @brief Returns the value type of the result returned by a parser
+ *
+ * @tparam Parser the parser
+ */
+template <class Parser>
+using parser_value_t = result_value_t<parser_result_t<Parser>>;
+
+/**
  * @brief Represents any result type that is always good. This guarantee allows
  * certain optimizations to take place with regard to the implementation of
  * things like noam::await_parser.
@@ -89,7 +115,8 @@ concept always_good_result =
  * @tparam Parser the type to test
  */
 template <class Parser>
-concept always_good_parser = any_parser<Parser> && requires(Parser parser, state_t state) {
+concept always_good_parser =
+    any_parser<Parser> && requires(Parser parser, state_t state) {
     { parser.parse(state) } -> always_good_result;
 };
 } // namespace noam
