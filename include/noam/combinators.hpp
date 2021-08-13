@@ -1,8 +1,8 @@
 #pragma once
 #include <noam/concepts.hpp>
+#include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
-#include <noam/operators.hpp>
 
 // This file holds functios that return parsers based on inputs
 
@@ -77,6 +77,31 @@ constexpr auto test = [](auto&& p) {
         // good, and as a result no check needs to be done here
         return boolean_result(sv, p.parse(sv));
     }};
+};
+
+/**
+ * @brief Takes `parser` and produces a new parser that generates true if the
+ * parser succeeds, and false if the parser fails. If the parser succeeded, func
+ * is invoked with parser.parse(...).get_value().
+ *
+ *
+ * @param parser The parser to test
+ * @param func the func to call on the value produced by the parser, when good
+ * @return parser A
+ */
+constexpr auto test_then = []<class P, class F>(P&& parser, F&& func) {
+    return noam::parser {
+        [parser = std::forward<P>(parser),
+         func = std::forward<F>(func)](state_t state) -> boolean_result {
+            auto result = parser.parse(state);
+            if (result.good()) {
+                state = result.get_state();
+                func(std::move(result).get_value());
+                return boolean_result(state, true);
+            } else {
+                return boolean_result(state, false);
+            }
+        }};
 };
 
 /**
