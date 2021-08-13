@@ -13,10 +13,11 @@ namespace noam {
  *
  * @param value the value to return when invoking the parser
  */
-constexpr auto pure = [](auto value) {
-    return noam::parser {[=](std::string_view state) {
-        return noam::pure_result {state, value};
-    }};
+constexpr auto pure = []<class Value>(Value&& value) {
+    return noam::parser {
+        [value = std::forward<Value>(value)](std::string_view state) {
+            return noam::pure_result {state, value};
+        }};
 };
 
 /**
@@ -28,21 +29,24 @@ constexpr auto pure = [](auto value) {
  * @return parser<(fold_left1:lambda)> a parser that repeatedly obtains values
  * by parsing the input with p, then folds those values using fold
  */
-auto fold_left = [](auto p, auto fold) {
+auto fold_left = []<class Parser, class Op>(Parser&& p, Op&& fold) {
     using value_t = std::decay_t<decltype(p.parse(state_t {}).get_value())>;
-    return parser {[=](state_t state) -> noam::standard_result<value_t> {
-        auto result = p.parse(state);
-        if (!result.good()) {
-            return {};
-        }
-        state = result.get_state();
-        value_t value = result.get_value();
-        for (result = p.parse(state); result.good(); result = p.parse(state)) {
-            value = fold(value, result.get_value());
+    return parser {
+        [p = std::forward<Parser>(p), fold = std::forward<Op>(fold)](
+            state_t state) -> noam::standard_result<value_t> {
+            auto result = p.parse(state);
+            if (!result.good()) {
+                return {};
+            }
             state = result.get_state();
-        }
-        return noam::standard_result {state, value};
-    }};
+            value_t value = result.get_value();
+            for (result = p.parse(state); result.good();
+                 result = p.parse(state)) {
+                value = fold(value, result.get_value());
+                state = result.get_state();
+            }
+            return noam::standard_result {state, value};
+        }};
 };
 
 /**
@@ -72,11 +76,12 @@ auto map(F&& func, Parser&& p) {
  * @return parser<(lambda)> A new parser
  */
 constexpr auto test = []<class Parser>(Parser&& parser) {
-    return noam::parser {[parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
-        // Note that boolean_result will select p(sv).get_state() if p(sv) is
-        // good, and as a result no check needs to be done here
-        return boolean_result(sv, parser.parse(sv));
-    }};
+    return noam::parser {
+        [parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
+            // Note that boolean_result will select p(sv).get_state() if p(sv)
+            // is good, and as a result no check needs to be done here
+            return boolean_result(sv, parser.parse(sv));
+        }};
 };
 
 /**
