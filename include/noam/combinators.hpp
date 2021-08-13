@@ -22,28 +22,28 @@ constexpr auto pure(Value&& value) {
 };
 
 /**
- * @brief Creates a parser p and returns a parser that reads values parsed by p
+ * @brief Creates a parser parser and returns a parser that reads values parsed by parser
  * and combines them using fold
  *
- * @param p the parser to fold
- * @param fold the operation with which to combine values produced by p
+ * @param parser the parser to fold
+ * @param fold the operation with which to combine values produced by parser
  * @return parser<(fold_left1:lambda)> a parser that repeatedly obtains values
- * by parsing the input with p, then folds those values using fold
+ * by parsing the input with parser, then folds those values using fold
  */
 template <class Parser, class Op>
-constexpr auto fold_left(Parser&& p, Op&& fold) {
-    using value_t = std::decay_t<decltype(p.parse(state_t {}).get_value())>;
-    return parser {
-        [p = std::forward<Parser>(p), fold = std::forward<Op>(fold)](
+constexpr auto fold_left(Parser&& parser, Op&& fold) {
+    using value_t = parser_value_t<Parser>;
+    return noam::parser {
+        [parser = std::forward<Parser>(parser), fold = std::forward<Op>(fold)](
             state_t state) -> noam::standard_result<value_t> {
-            auto result = p.parse(state);
+            auto result = parser.parse(state);
             if (!result.good()) {
                 return {};
             }
             state = result.get_state();
             value_t value = result.get_value();
-            for (result = p.parse(state); result.good();
-                 result = p.parse(state)) {
+            for (result = parser.parse(state); result.good();
+                 result = parser.parse(state)) {
                 value = fold(value, result.get_value());
                 state = result.get_state();
             }
@@ -53,35 +53,35 @@ constexpr auto fold_left(Parser&& p, Op&& fold) {
 
 /**
  * @brief Maps a function over a parser, returning a new parser whose output is
- * func applied to the output of p
+ * func applied to the output of parser
  *
- * @tparam F
+ * @tparam Func
  * @tparam Parser
  * @param func The function used to do the map operation
- * @param p The parser to do the map operation on
+ * @param parser The parser to do the map operation on
  * @return parser<(map:lambda)> returns a parser such that map(func,
- * p).parse(str).get_value() = func(p.parse(str)).get_value())
+ * parser).parse(str).get_value() = func(parser.parse(str)).get_value())
  */
-template <class F, any_parser Parser>
-auto map(F&& func, Parser&& p) {
-    return parser {[f = std::forward<F>(func),
-                    p = std::forward<Parser>(p)](state_t state) {
-        return transform_result {p.parse(state), f};
+template <class Func, any_parser Parser>
+auto map(Func&& func, Parser&& parser) {
+    return noam::parser {[f = std::forward<Func>(func),
+                    parser = std::forward<Parser>(parser)](state_t state) {
+        return transform_result {parser.parse(state), f};
     }};
 }
 
 /**
- * @brief Takes a parser p and produces a new parser that generates a true if p
- * succeeded and false if p failed
+ * @brief Takes a parser parser and produces a new parser that generates a true if parser
+ * succeeded and false if parser failed
  *
- * @param p A parser whose output you wish to test
+ * @param parser A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
 template <class Parser>
 constexpr auto test(Parser&& parser) {
     return noam::parser {
         [parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
-            // Note that boolean_result will select p(sv).get_state() if p(sv)
+            // Note that boolean_result will select parser(sv).get_state() if parser(sv)
             // is good, and as a result no check needs to be done here
             return boolean_result(sv, parser.parse(sv));
         }};
@@ -97,11 +97,11 @@ constexpr auto test(Parser&& parser) {
  * @param func the func to call on the value produced by the parser, when good
  * @return parser A
  */
-template <class P, class F>
-constexpr auto test_then(P&& parser, F&& func) {
+template <class Parser, class Func>
+constexpr auto test_then(Parser&& parser, Func&& func) {
     return noam::parser {
-        [parser = std::forward<P>(parser),
-         func = std::forward<F>(func)](state_t state) -> boolean_result {
+        [parser = std::forward<Parser>(parser),
+         func = std::forward<Func>(func)](state_t state) -> boolean_result {
             auto result = parser.parse(state);
             if (result.good()) {
                 state = result.get_state();
@@ -114,17 +114,17 @@ constexpr auto test_then(P&& parser, F&& func) {
 };
 
 /**
- * @brief Takes a parser p and produces a new parser that generates a true if p
- * succeeded and false if p failed. Does so with lookahead, so that no portion
+ * @brief Takes a parser parser and produces a new parser that generates a true if parser
+ * succeeded and false if parser failed. Does so with lookahead, so that no portion
  * of the string is consumed
  *
- * @param p A parser whose output you wish to test
+ * @param parser A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
 template <class Parser>
-constexpr auto test_lookahead(Parser&& p) {
-    return parser {[p = std::forward<Parser>(p)](state_t sv) -> boolean_result {
-        return boolean_result(sv, p.parse(sv).good());
+constexpr auto test_lookahead(Parser&& parser) {
+    return noam::parser {[parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
+        return boolean_result(sv, parser.parse(sv).good());
     }};
 };
 
