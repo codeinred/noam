@@ -13,7 +13,8 @@ namespace noam {
  *
  * @param value the value to return when invoking the parser
  */
-constexpr auto pure = []<class Value>(Value&& value) {
+template <class Value>
+constexpr auto pure(Value&& value) {
     return noam::parser {
         [value = std::forward<Value>(value)](std::string_view state) {
             return noam::pure_result {state, value};
@@ -29,7 +30,8 @@ constexpr auto pure = []<class Value>(Value&& value) {
  * @return parser<(fold_left1:lambda)> a parser that repeatedly obtains values
  * by parsing the input with p, then folds those values using fold
  */
-auto fold_left = []<class Parser, class Op>(Parser&& p, Op&& fold) {
+template <class Parser, class Op>
+constexpr auto fold_left(Parser&& p, Op&& fold) {
     using value_t = std::decay_t<decltype(p.parse(state_t {}).get_value())>;
     return parser {
         [p = std::forward<Parser>(p), fold = std::forward<Op>(fold)](
@@ -75,7 +77,8 @@ auto map(F&& func, Parser&& p) {
  * @param p A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
-constexpr auto test = []<class Parser>(Parser&& parser) {
+template <class Parser>
+constexpr auto test(Parser&& parser) {
     return noam::parser {
         [parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
             // Note that boolean_result will select p(sv).get_state() if p(sv)
@@ -94,7 +97,8 @@ constexpr auto test = []<class Parser>(Parser&& parser) {
  * @param func the func to call on the value produced by the parser, when good
  * @return parser A
  */
-constexpr auto test_then = []<class P, class F>(P&& parser, F&& func) {
+template <class P, class F>
+constexpr auto test_then(P&& parser, F&& func) {
     return noam::parser {
         [parser = std::forward<P>(parser),
          func = std::forward<F>(func)](state_t state) -> boolean_result {
@@ -117,7 +121,8 @@ constexpr auto test_then = []<class P, class F>(P&& parser, F&& func) {
  * @param p A parser whose output you wish to test
  * @return parser<(lambda)> A new parser
  */
-constexpr auto test_lookahead = []<class Parser>(Parser&& p) {
+template <class Parser>
+constexpr auto test_lookahead(Parser&& p) {
     return parser {[p = std::forward<Parser>(p)](state_t sv) -> boolean_result {
         return boolean_result(sv, p.parse(sv).good());
     }};
@@ -162,7 +167,8 @@ constexpr auto require_prefix = [](std::string_view prefix) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto lookahead = []<class Parser>(Parser&& parser) {
+template <class Parser>
+constexpr auto lookahead(Parser&& parser) {
     using result_t = parser_result_t<Parser>;
     using value_t = parser_value_t<Parser>;
     return [parser = std::forward<Parser>(parser)](state_t state) {
@@ -194,7 +200,8 @@ constexpr auto lookahead = []<class Parser>(Parser&& parser) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto try_parse = []<class Parser>(Parser&& parser) {
+template <class Parser>
+constexpr auto try_parse(Parser&& parser) {
     return [parser = std::forward<Parser>(parser)](state_t state) {
         auto result = parser.parse(state);
         bool result_good = result.good();
@@ -211,7 +218,8 @@ constexpr auto try_parse = []<class Parser>(Parser&& parser) {
  *
  * @param parser the parser being given to the combinator to be transformed
  */
-constexpr auto try_lookahead = []<class Parser>(Parser&& parser) {
+template <class Parser>
+constexpr auto try_lookahead(Parser&& parser) {
     return [parser = std::forward<Parser>(parser)](state_t state) {
         auto result = parser.parse(state);
         return pure_result {
