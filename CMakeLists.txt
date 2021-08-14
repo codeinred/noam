@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # Get the project name as the name of the current source directory
 # Feel free to change this if your project has a different name
-get_filename_component(project_name ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+get_filename_component(project_name ${CMAKE_CURRENT_LIST_DIR} NAME)
 
 project(${project_name} CXX)
 set(libname "${project_name}")
