@@ -88,6 +88,31 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/
     endforeach()
 endif()
 
+# If we're building this project, and not something that has this project as a dependency
+# Then we want to build files in the src directory. This will build every top-level
+# file in the src directory as a separate program
+if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/bench"))
+    include(FetchContent)
+    FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG main
+    )
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+    FetchContent_MakeAvailable(benchmark)
+
+    file(GLOB all_executables "bench/*.cpp")
+
+    foreach(file_name ${all_executables})
+        get_filename_component(executable_name ${file_name} NAME_WLE)
+        message("Adding ${executable_name} from bench/")
+        add_executable("${executable_name}" "${file_name}")
+        target_link_libraries("${executable_name}" PRIVATE benchmark)
+        target_link_libraries("${executable_name}" PRIVATE ${libname})
+        target_link_libraries("${executable_name}" PRIVATE Threads::Threads)
+    endforeach()
+endif()
+
 # Build every file in the test/ directory as a separate program and register
 # it as a test
 if((EXISTS "${working_dir}/test/") AND (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND BUILD_TESTING)
