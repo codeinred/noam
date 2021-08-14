@@ -77,65 +77,13 @@ constexpr std::string_view input =
     "977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, "
     "991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, hello world";
 
-constexpr noam::parser parse_sequence =
-    [](noam::state_t) -> noam::co_result<std::vector<int>> {
-    using noam::parse_int;
-    using noam::parser;
-    using noam::parse_comma_separator;
-    using noam::try_parse;
-
-    std::vector<int> vect;
-
-    // Get the first value
-    vect.push_back(co_await parse_int);
-
-    // (>>) : Parser a -> Parser b -> Parser b
-    // noam::try_parse : Parser a -> Parser Maybe a
-    // NB: parse_comma_separator reads whitespace on either side of the comma
-    // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
-    //      === parse_separator<','>
-    //      === parse_comma_separator
-    parser next_value = try_parse(parse_comma_separator >> parse_int);
-
-    // While there's a value followed by a comma, add it to the vector
-    while (std::optional<long> value = co_await next_value) {
-        vect.push_back(*value);
-    }
-
-    // Return the vector of values
-    co_return vect;
-} / noam::make_parser;
-
-constexpr noam::parser parse_sequence_test_then =
-    [](noam::state_t) -> noam::co_result<std::vector<int>> {
-    using noam::parse_int;
-    using noam::parser;
-    using noam::parse_comma_separator;
-    using noam::try_parse;
-
-    std::vector<int> vect;
-
-    // Get the first value
-    vect.push_back(co_await parse_int);
-
-    // (>>) : Parser a -> Parser b -> Parser b
-    // noam::try_parse : Parser a -> Parser Maybe a
-    // NB: parse_comma_separator reads whitespace on either side of the comma
-    // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
-    //      === parse_separator<','>
-    //      === parse_comma_separator
-    parser next_value =
-        test_then(parse_comma_separator >> parse_int, [&](int value) {
-            vect.push_back(value);
-        });
-
-    // While there's a value followed by a comma, add it to the vector
-    while (co_await next_value) {
-    }
-
-    // Return the vector of values
-    co_return vect;
-} / noam::make_parser;
+constexpr noam::parser add_sequence_fold = noam::fold_left(
+    // parse the first value as a long, so that the result's value is a long
+    noam::parse_long,
+    // parse the rest of the values as ints
+    noam::parse_comma_separator >> noam::parse_int,
+    // Add stuff up
+    [](long sum, int value) { return sum + value; });
 
 constexpr noam::parser add_sequence_test_then =
     [](noam::state_t) -> noam::co_result<long> {
@@ -210,19 +158,24 @@ constexpr noam::parser add_sequence_baseline =
     return {std::string_view {parse_result_start, end}, sum};
 } / noam::make_parser;
 
-static void BM_parse_sequence_coro(benchmark::State& state) {
+static void BM_add_sequence_fold(benchmark::State& state) {
+    using std::literals::string_literals::operator""s;
+    noam::standard_result<long> result;
     for (auto _ : state)
-        parse_sequence.parse(input);
+        result = add_sequence_fold.parse(input);
+    if (!result.good()) {
+        throw std::runtime_error("Parse failed");
+    }
+    if (result.get_value() != 500500) {
+        throw std::runtime_error(
+            "Recieved bad value: "s + std::to_string(result.get_value()));
+    }
+    if (result.get_state() != ", hello world") {
+        throw std::runtime_error("Failed to read entire input string");
+    }
 }
 // Register the function as a benchmark
-BENCHMARK(BM_parse_sequence_coro);
-
-static void BM_parse_sequence_test_then(benchmark::State& state) {
-    for (auto _ : state)
-        parse_sequence_test_then.parse(input);
-}
-// Register the function as a benchmark
-BENCHMARK(BM_parse_sequence_test_then);
+BENCHMARK(BM_add_sequence_fold);
 
 static void BM_add_sequence_test_then(benchmark::State& state) {
     using std::literals::string_literals::operator""s;
