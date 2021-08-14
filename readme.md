@@ -1,4 +1,6 @@
-# New C++ Project
+# noam parsing library: Parser Combinators for C++
+
+**Aug 14 2021 NOTE: NOT READY FOR PRODUCTION USE YET**
 
 ## Directory Structure
 
