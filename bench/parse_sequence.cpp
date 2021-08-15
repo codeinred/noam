@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 
-constexpr std::string_view input =
+constexpr std::string_view sequence_input =
     "7014, 12696, 29568, 28176, 23527, 22429, 3028, 26971, 1416, 24006, 17784, "
     "3877, 27521, 26757, 23749, 11086, 4652, 970, 2669, 12260, 12797, 21246, "
     "20196, 17407, 6421, 29361, 6382, 16879, 9289, 31432, 8213, 16303, 11360, "
@@ -103,7 +103,7 @@ constexpr std::string_view input =
     "23390, 20063, 3472, 26575, 16900, 26482, 5237, 18565, 12074, 6260, 12240, "
     "12731, 29622, hello world";
 
-constexpr noam::parser add_sequence_fold = noam::fold_left(
+constexpr noam::parser add_w_fold = noam::fold_left(
     // parse the first value as a long, so that the result's value is a long
     noam::parse_long,
     // parse the rest of the values as ints
@@ -111,7 +111,7 @@ constexpr noam::parser add_sequence_fold = noam::fold_left(
     // Add stuff up
     [](long sum, int value) { return sum + value; });
 
-constexpr noam::parser add_sequence_test_then =
+constexpr noam::parser add_w_test_then =
     [](noam::state_t) -> noam::co_result<long> {
     using noam::parse_int;
     using noam::parser;
@@ -138,7 +138,7 @@ constexpr noam::parser add_sequence_test_then =
     co_return sum;
 } / noam::make_parser;
 
-constexpr noam::parser add_sequence_try_parse =
+constexpr noam::parser add_w_try_parse =
     [](noam::state_t) -> noam::co_result<long> {
     using noam::parse_int;
     using noam::parser;
@@ -165,7 +165,7 @@ constexpr noam::parser add_sequence_try_parse =
     co_return sum;
 } / noam::make_parser;
 
-constexpr noam::parser add_sequence_baseline =
+constexpr noam::parser add_w_baseline =
     [](std::string_view sv) -> noam::standard_result<long> {
     // Value used to store from_chars output
     int value = 0;
@@ -211,34 +211,56 @@ constexpr noam::parser add_sequence_baseline =
     return {std::string_view {parse_result_start, end}, sum};
 } / noam::make_parser;
 
-template <class Parser>
-void BM_add_sequence(benchmark::State& state, Parser parser) {
-    using std::literals::string_literals::operator""s;
-    using parser_t = std::decay_t<Parser>;
-    using result_t = noam::parser_result_t<parser_t>;
-    result_t result;
-    for (auto _ : state) {
-        result = parser.parse(input);
-
+template <class Value>
+struct parser_test {
+    std::string_view input;
+    std::string_view expected_remainder;
+    Value expected_value;
+    std::string_view get_input() const { return input; }
+    /**
+     * @brief Validates that the result returned by the parser represents a
+     * successful parse; that the value of the parse was correct; and that the
+     * correct remainder is returned
+     *
+     * @param result The result produced by the parser that needs to be
+     * validated
+     */
+    void validate(auto result) const {
+        using std::literals::string_literals::operator""s;
         // check to ensure that everything is good
         if (!result.good()) {
             throw std::runtime_error("Parse failed");
         }
-        if (result.get_value() != 15998326) {
+        if (result.get_value() != expected_value) {
             throw std::runtime_error(
                 "Recieved bad value: "s + std::to_string(result.get_value()));
         }
-        if (result.get_state() != ", hello world") {
+        if (result.get_state() != expected_remainder) {
             throw std::runtime_error("Failed to read entire input string");
         }
     }
+};
+template <class Value>
+parser_test(std::string_view, std::string_view, Value value)
+    -> parser_test<Value>;
+
+constexpr parser_test test_add {sequence_input, ", hello world", 15998326};
+
+void BM_parser(benchmark::State& state, auto parser, auto test) {
+    for (auto _ : state) {
+        // Validate that the parse result was successful
+        // This is done to ensure that benchmarks aren't spurious and represent
+        // A correctly parsed result
+        // It should be an extremely fast operation compared to parsing itself
+        test.validate(parser.parse(test.get_input()));
+    }
     state.counters["throughput"] = benchmark::Counter(
-        state.iterations() * input.size(), benchmark::Counter::kIsRate);
+        state.iterations() * test.input.size(), benchmark::Counter::kIsRate);
 }
 
-BENCHMARK_CAPTURE(BM_add_sequence, using_try_parse, add_sequence_try_parse);
-BENCHMARK_CAPTURE(BM_add_sequence, using_test_then, add_sequence_test_then);
-BENCHMARK_CAPTURE(BM_add_sequence, using_fold, add_sequence_fold);
-BENCHMARK_CAPTURE(BM_add_sequence, using_baseline, add_sequence_baseline);
+BENCHMARK_CAPTURE(BM_parser, add_w_try_parse, add_w_try_parse, test_add);
+BENCHMARK_CAPTURE(BM_parser, add_w_test_then, add_w_test_then, test_add);
+BENCHMARK_CAPTURE(BM_parser, add_w_fold, add_w_fold, test_add);
+BENCHMARK_CAPTURE(BM_parser, add_w_baseline, add_w_baseline, test_add);
 
 BENCHMARK_MAIN();
