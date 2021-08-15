@@ -92,14 +92,19 @@ endif()
 # Then we want to build files in the src directory. This will build every top-level
 # file in the src directory as a separate program
 if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/bench"))
-    include(FetchContent)
-    FetchContent_Declare(
-        benchmark
-        GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG main
-    )
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
-    FetchContent_MakeAvailable(benchmark)
+    find_package(benchmark QUIET)
+    if(NOT ${benchmark_FOUND})
+        include(FetchContent)
+        # list(APPEND CMAKE_ARGS "-DBENCHMARK_ENABLE_GTEST_TESTS=OFF")
+
+        FetchContent_Declare(
+            benchmark
+            GIT_REPOSITORY https://github.com/google/benchmark.git
+            GIT_TAG main
+        )
+        set(BENCHMARK_ENABLE_TESTING OFF)
+        FetchContent_MakeAvailable(benchmark)
+    endif()
 
     file(GLOB all_executables "bench/*.cpp")
 
@@ -107,6 +112,7 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/
         get_filename_component(executable_name ${file_name} NAME_WLE)
         message("Adding ${executable_name} from bench/")
         add_executable("${executable_name}" "${file_name}")
+        target_compile_options("${executable_name}" PRIVATE "-march=native")
         target_link_libraries("${executable_name}" PRIVATE benchmark)
         target_link_libraries("${executable_name}" PRIVATE ${libname})
         target_link_libraries("${executable_name}" PRIVATE Threads::Threads)

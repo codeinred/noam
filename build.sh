@@ -10,5 +10,5 @@ mkdir -p "$project_root/build"
 cd "$project_root/build"
 
 # build project in $project_root/build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBENCHMARK_ENABLE_GTEST_TESTS=OFF "${@}"
+cmake .. -DCMAKE_BUILD_TYPE=Release "${@}"
 cmake --build . --config Release
