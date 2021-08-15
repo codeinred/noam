@@ -122,7 +122,7 @@ constexpr parser parse_line = [](state_t state) {
 
 template <char... separator>
 constexpr parser parse_separator =
-    whitespace >> parse_constexpr_prefix<separator...> >> whitespace;
+    parse_repeated_char<' '> >> parse_constexpr_prefix<separator...> >> parse_repeated_char<' '>;
 
 constexpr parser parse_comma_separator = parse_separator<','>;
 } // namespace noam
