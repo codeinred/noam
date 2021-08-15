@@ -112,6 +112,33 @@ constexpr noam::parser add_sequence_test_then =
     co_return sum;
 } / noam::make_parser;
 
+constexpr noam::parser add_sequence_try_parse =
+    [](noam::state_t) -> noam::co_result<long> {
+    using noam::parse_int;
+    using noam::parser;
+    using noam::parse_comma_separator;
+    using noam::try_parse;
+
+    // Get the first value
+    long sum = co_await parse_int;
+
+    // (>>) : Parser a -> Parser b -> Parser b
+    // noam::try_parse : Parser a -> Parser Maybe a
+    // NB: parse_comma_separator reads whitespace on either side of the comma
+    // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
+    //      === parse_separator<','>
+    //      === parse_comma_separator
+    parser next_value = noam::try_parse(parse_comma_separator >> parse_int);
+
+    // While there's a value followed by a comma, add it to the vector
+    while (std::optional value = co_await next_value) {
+        sum += *value;
+    }
+
+    // Return the vector of values
+    co_return sum;
+} / noam::make_parser;
+
 constexpr noam::parser add_sequence_baseline =
     [](std::string_view sv) -> noam::standard_result<long> {
     // Value used to store from_chars output
@@ -158,11 +185,14 @@ constexpr noam::parser add_sequence_baseline =
     return {std::string_view {parse_result_start, end}, sum};
 } / noam::make_parser;
 
-static void BM_add_sequence_fold(benchmark::State& state) {
+template <class Parser>
+void BM_add_sequence(benchmark::State& state, Parser parser) {
     using std::literals::string_literals::operator""s;
-    noam::standard_result<long> result;
+    using parser_t = std::decay_t<Parser>;
+    using result_t = noam::parser_result_t<parser_t>;
+    result_t result;
     for (auto _ : state)
-        result = add_sequence_fold.parse(input);
+        result = parser.parse(input);
     if (!result.good()) {
         throw std::runtime_error("Parse failed");
     }
@@ -173,46 +203,24 @@ static void BM_add_sequence_fold(benchmark::State& state) {
     if (result.get_state() != ", hello world") {
         throw std::runtime_error("Failed to read entire input string");
     }
+    state.counters["throughput"] = benchmark::Counter(
+        state.iterations() * input.size(), benchmark::Counter::kIsRate);
 }
-// Register the function as a benchmark
-BENCHMARK(BM_add_sequence_fold);
 
-static void BM_add_sequence_test_then(benchmark::State& state) {
-    using std::literals::string_literals::operator""s;
-    noam::co_result<long> result;
-    for (auto _ : state)
-        result = add_sequence_test_then.parse(input);
-    if (!result.good()) {
-        throw std::runtime_error("Parse failed");
-    }
-    if (result.get_value() != 500500) {
-        throw std::runtime_error(
-            "Recieved bad value: "s + std::to_string(result.get_value()));
-    }
-    if (result.get_state() != ", hello world") {
-        throw std::runtime_error("Failed to read entire input string");
-    }
-}
-// Register the function as a benchmark
-BENCHMARK(BM_add_sequence_test_then);
+BENCHMARK_CAPTURE(BM_add_sequence, using_try_parse, add_sequence_try_parse);
+BENCHMARK_CAPTURE(BM_add_sequence, using_test_then, add_sequence_test_then);
+BENCHMARK_CAPTURE(BM_add_sequence, using_fold, add_sequence_fold);
+BENCHMARK_CAPTURE(BM_add_sequence, using_baseline, add_sequence_baseline);
 
-static void BM_add_sequence_baseline(benchmark::State& state) {
-    using std::literals::string_literals::operator""s;
-    noam::standard_result<long> result;
-    for (auto _ : state)
-        result = add_sequence_baseline.parse(input);
-    if (!result.good()) {
-        throw std::runtime_error("Parse failed");
-    }
-    if (result.get_value() != 500500) {
-        throw std::runtime_error(
-            "Recieved bad value: "s + std::to_string(result.get_value()));
-    }
-    if (result.get_state() != ", hello world") {
-        throw std::runtime_error("Failed to read entire input string");
-    }
-}
-// Register the function as a benchmark
-BENCHMARK(BM_add_sequence_baseline);
+BENCHMARK_CAPTURE(BM_add_sequence, using_try_parse, add_sequence_try_parse);
+BENCHMARK_CAPTURE(BM_add_sequence, using_test_then, add_sequence_test_then);
+BENCHMARK_CAPTURE(BM_add_sequence, using_fold, add_sequence_fold);
+BENCHMARK_CAPTURE(BM_add_sequence, using_baseline, add_sequence_baseline);
+
+BENCHMARK_CAPTURE(BM_add_sequence, using_try_parse, add_sequence_try_parse);
+BENCHMARK_CAPTURE(BM_add_sequence, using_test_then, add_sequence_test_then);
+BENCHMARK_CAPTURE(BM_add_sequence, using_fold, add_sequence_fold);
+BENCHMARK_CAPTURE(BM_add_sequence, using_baseline, add_sequence_baseline);
+
 
 BENCHMARK_MAIN();
