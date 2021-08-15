@@ -216,7 +216,15 @@ struct parser_test {
     std::string_view input;
     std::string_view expected_remainder;
     Value expected_value;
+    size_t items = 0;
     std::string_view get_input() const { return input; }
+    /**
+     * @brief Return the number of items parsed by this test. If this metric
+     * isn't valid, returns 0
+     *
+     * @return size_t
+     */
+    size_t get_items() { return items; }
     /**
      * @brief Validates that the result returned by the parser represents a
      * successful parse; that the value of the parse was correct; and that the
@@ -243,8 +251,11 @@ struct parser_test {
 template <class Value>
 parser_test(std::string_view, std::string_view, Value value)
     -> parser_test<Value>;
+template <class Value>
+parser_test(std::string_view, std::string_view, Value value, size_t)
+    -> parser_test<Value>;
 
-constexpr parser_test test_add {sequence_input, ", hello world", 15998326};
+constexpr parser_test test_add {sequence_input, ", hello world", 15998326, 1000};
 
 void BM_parser(benchmark::State& state, auto parser, auto test) {
     for (auto _ : state) {
@@ -254,8 +265,10 @@ void BM_parser(benchmark::State& state, auto parser, auto test) {
         // It should be an extremely fast operation compared to parsing itself
         test.validate(parser.parse(test.get_input()));
     }
-    state.counters["throughput"] = benchmark::Counter(
-        state.iterations() * test.input.size(), benchmark::Counter::kIsRate);
+    state.SetBytesProcessed(test.get_input().size() * state.iterations());
+    if (test.get_items()) {
+        state.SetItemsProcessed(test.get_items() * state.iterations());
+    }
 }
 
 BENCHMARK_CAPTURE(BM_parser, add_w_try_parse, add_w_try_parse, test_add);
