@@ -1,5 +1,5 @@
 # Requirements
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 # Get the project name as the name of the current source directory
 # Feel free to change this if your project has a different name
@@ -22,7 +22,6 @@ message("Building project ${project_name}")
 
 # Add library and register compile options
 add_library(${libname} INTERFACE)
-set_property(TARGET ${libname} PROPERTY CXX_STANDARD_REQUIRED 20)
 target_compile_features(${libname} INTERFACE cxx_std_20)
 
 # The /EHa flag enables standard C++ stack unwinding
