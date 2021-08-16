@@ -159,6 +159,17 @@ struct state {
         return std::string_view(_begin, _end);
     }
     operator std::string() const noexcept { return std::string(_begin, _end); }
+
+    constexpr bool operator==(state other) const noexcept {
+        const auto other_length = other.size();
+        if (other_length != size())
+            return false;
+        for (intptr_t i = 0; i < other_length; i++) {
+            if (other._begin[i] != _begin[i])
+                return false;
+        }
+        return true;
+    }
 };
 using state_t = state;
 } // namespace noam
