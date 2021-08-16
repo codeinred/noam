@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 
-constexpr std::string_view sequence_input =
+constexpr noam::state_t sequence_input =
     "7014, 12696, 29568, 28176, 23527, 22429, 3028, 26971, 1416, 24006, 17784, "
     "3877, 27521, 26757, 23749, 11086, 4652, 970, 2669, 12260, 12797, 21246, "
     "20196, 17407, 6421, 29361, 6382, 16879, 9289, 31432, 8213, 16303, 11360, "
@@ -166,7 +166,7 @@ constexpr noam::parser add_w_try_parse =
 } / noam::make_parser;
 
 constexpr noam::parser add_w_baseline =
-    [](std::string_view sv) -> noam::standard_result<long> {
+    [](noam::state_t sv) -> noam::standard_result<long> {
     // Value used to store from_chars output
     int value = 0;
     // Result of std::from_chars
@@ -208,16 +208,16 @@ constexpr noam::parser add_w_baseline =
         begin = result.ptr;
         parse_result_start = result.ptr;
     }
-    return {std::string_view {parse_result_start, end}, sum};
+    return {noam::state_t {parse_result_start, end}, sum};
 } / noam::make_parser;
 
 template <class Value>
 struct parser_test {
-    std::string_view input;
-    std::string_view expected_remainder;
+    noam::state_t input;
+    noam::state_t expected_remainder;
     Value expected_value;
     size_t items = 0;
-    std::string_view get_input() const { return input; }
+    noam::state_t get_input() const { return input; }
     /**
      * @brief Return the number of items parsed by this test. If this metric
      * isn't valid, returns 0
@@ -249,10 +249,10 @@ struct parser_test {
     }
 };
 template <class Value>
-parser_test(std::string_view, std::string_view, Value value)
+parser_test(noam::state_t, noam::state_t, Value value)
     -> parser_test<Value>;
 template <class Value>
-parser_test(std::string_view, std::string_view, Value value, size_t)
+parser_test(noam::state_t, noam::state_t, Value value, size_t)
     -> parser_test<Value>;
 
 constexpr parser_test test_add {sequence_input, ", hello world", 15998326, 1000};
