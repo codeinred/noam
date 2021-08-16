@@ -9,6 +9,7 @@ struct state {
     char const* _begin = nullptr;
     char const* _end = nullptr;
 
+    constexpr state(std::nullptr_t) noexcept {}
     constexpr state() = default;
     constexpr state(state const&) = default;
     constexpr state(state&&) = default;
