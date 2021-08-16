@@ -44,7 +44,7 @@ class boolean_result {
      * @param result The result to transform into a boolean result
      */
     constexpr boolean_result(
-        std::string_view initial, parse_result auto&& result) {
+        state_t initial, parse_result auto&& result) {
         if (result.good()) {
             state = result.get_state();
             value = true;
@@ -140,12 +140,12 @@ struct match_constexpr_prefix_result {
      * @brief The prefix that this result matches
      *
      */
-    constexpr static std::string_view value {ch_array, sizeof...(ch)};
+    constexpr static state_t value {ch_array, sizeof...(ch)};
     state_t state;
     bool is_good = false;
 
    public:
-    using value_type = std::string_view;
+    using value_type = state_t;
     match_constexpr_prefix_result() = default;
     match_constexpr_prefix_result(state_t state) noexcept
       : state(state)
@@ -153,7 +153,7 @@ struct match_constexpr_prefix_result {
     constexpr bool good() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr std::string_view get_value() const noexcept { return value; }
+    constexpr state_t get_value() const noexcept { return value; }
 };
 
 // The result of fmap'ing a parser result. It preserves BaseResult.good() and
