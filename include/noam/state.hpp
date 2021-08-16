@@ -6,6 +6,11 @@
 
 namespace noam {
 struct state {
+    constexpr static const char* get_end_of_c_string(char const* c_string) {
+        while (*c_string)
+            c_string++;
+        return c_string;
+    }
     char const* _begin = nullptr;
     char const* _end = nullptr;
 
