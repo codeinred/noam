@@ -205,4 +205,44 @@ constexpr state null_state {};
 constexpr state operator"" _st(const char* ptr, size_t len) noexcept {
     return state(ptr, len);
 }
+
+static_assert(
+    state("").size() == 0,
+    "state constructed from empty string literal must have zero size");
+static_assert(
+    state("Hello").last() != '\0',
+    "The last character of a state constructed from a string literal must "
+    "not be \\0");
+
+static_assert(
+    state((char const*)"Hello") == "Hello"_st, "C String constructor broken");
+static_assert("Hello"_st.size() == 5, "literal operator broken");
+static_assert(state("Hello").size() == 5, "String literal constructor broken");
+static_assert(
+    "Hello"_st.last() != '\0',
+    "The last character of a state literal should not be \\0");
+static_assert(""_st == ""_st, "Empty states must be lexically equivilant");
+static_assert("uwu"_st != "owo"_st, "Differing states must not be equivilant");
+static_assert("a"_st < "b"_st, "Lexical ordering of state is broken");
+static_assert("a"_st <= "b"_st, "Lexical ordering of state is broken");
+static_assert(
+    ""_st < "a"_st, "Empty states must be strictly less than nonempty states");
+static_assert(
+    !(""_st > "a"_st),
+    "Empty states must be strictly less than nonempty states");
+
+static_assert(
+    empty_state < "a"_st,
+    "Empty states must be strictly less than nonempty states");
+static_assert(
+    !(empty_state > "a"_st),
+    "Empty states must be strictly less than nonempty states");
+static_assert(empty_state.null(), "Empty state must be null");
+static_assert(empty_state == empty_state, "Empty state must equal itself");
+static_assert(empty_state == ""_st, "Empty state must equal other empty state");
+static_assert(
+    "hewwo uwu 1"_st < "hewwo uwu 2"_st, "Lexical ordering of state is broken");
+static_assert(
+    "hewwo uwu "_st < "hewwo uwu 2"_st,
+    "Shorter states must be lexically less");
 } // namespace noam
