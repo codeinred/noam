@@ -41,7 +41,7 @@ struct state {
     template <size_t N>
     constexpr state(char const (&array)[N]) noexcept
       : _begin(array)
-      , _end(array + (array[N - 1] == '\0' ? N - 1 : N)) {}
+      , _end(array + N - (array[N - 1] == '\0')) {}
 
     constexpr state(const char* c_ctr) noexcept
       : _begin(c_ctr)
