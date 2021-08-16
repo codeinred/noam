@@ -144,6 +144,14 @@ struct state {
         }
         return true;
     }
+    /**
+     * @brief Makes the state null
+     *
+     */
+    constexpr void clear() noexcept {
+        _begin = nullptr;
+        _end = nullptr;
+    }
     constexpr bool starts_with(char const ch) const noexcept {
         return _begin < _end && _begin[0] == ch;
     }
