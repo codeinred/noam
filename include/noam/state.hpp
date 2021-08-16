@@ -95,13 +95,13 @@ struct state {
      * @return true if the state is empty or null
      * @return false if the state points to a range of chars with nonzero length
      */
-    constexpr bool empty() const noexcept { return _begin >= _end; }
+    constexpr bool empty() const noexcept { return _end <= _begin; }
     constexpr bool has() const noexcept { return _begin < _end; }
 
     /**
      * @brief Returns the number of characters. This is given by _end - _begin.
      * Allows negatives so that size() > 0 is a reliable check, and you can
-     * detect if it overshot it's bounds
+     * detect if it overshot it's bounds. If the state is null, returns 0.
      *
      * @return intptr_t The result of _end - _begin
      */
@@ -121,7 +121,7 @@ struct state {
         std::swap(_end, other._end);
     }
     constexpr bool starts_with(state prefix) const noexcept {
-        size_t prefix_len = prefix.size();
+        auto prefix_len = prefix.size();
         if (size() < prefix_len) {
             return false;
         }
