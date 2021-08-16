@@ -28,6 +28,16 @@ struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
     }
 };
 
+template <>
+struct fmt::formatter<noam::state_t> : fmt::formatter<std::string_view> {
+    using base = fmt::formatter<std::string_view>;
+    // parse is inherited from formatter<string_view>.
+    template <typename FormatContext>
+    decltype(auto) format(noam::state_t state, FormatContext& ctx) {
+        return base::format(state, ctx);
+    }
+};
+
 bool all_passed = true;
 void test(
     noam::state_t name,
