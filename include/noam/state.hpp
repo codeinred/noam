@@ -197,6 +197,15 @@ struct state {
         }
         return s1 <=> s2;
     }
+
+    /**
+     * @brief Returns a copy of the state
+     *
+     * @return state
+     */
+    constexpr state get_state() const noexcept {
+        return *this;
+    }
 };
 using state_t = state;
 constexpr state empty_state {};

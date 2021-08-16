@@ -7,15 +7,16 @@ namespace noam {
 using std::optional;
 
 template <class Value>
-struct pure_result {
+struct pure_result : public state_t {
     using value_type = Value;
-    state_t state;
-    Value value;
+    [[no_unique_address]] Value value {};
+    using state_t::get_state;
 
     // pure_result is a good boy
     constexpr operator bool() const noexcept { return true; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
+    constexpr void set_state(state_t new_state) noexcept {
+        state_t::operator=(new_state);
+    }
     constexpr decltype(auto) get_value() & { return value; }
     constexpr decltype(auto) get_value() const& { return value; }
     constexpr decltype(auto) get_value() && { return std::move(*this).value; }
@@ -25,7 +26,7 @@ pure_result(state_t, Value) -> pure_result<Value>;
 
 class boolean_result {
     state_t state;
-    bool value;
+    bool value = false;
 
    public:
     using value_type = bool;
@@ -43,8 +44,7 @@ class boolean_result {
      * @param initial The state to use if result returns false
      * @param result The result to transform into a boolean result
      */
-    constexpr boolean_result(
-        state_t initial, parse_result auto&& result) {
+    constexpr boolean_result(state_t initial, parse_result auto&& result) {
         if (result) {
             state = result.get_state();
             value = true;
@@ -65,19 +65,17 @@ class boolean_result {
 // used for obtaining the hidden state of the parser (e.g., for lookahead)
 // this is not impure since it cannot be used to modify that state
 // Rather, state_result is a Good Boy b/c it always produces a value! 🐶
-struct state_result {
+struct state_result : public state_t {
     using value_type = state_t;
-    state_t state;
-    constexpr operator bool() const noexcept { return true; }
-    constexpr state_t get_value() const noexcept { return state; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
+    using state_t::get_state;
+    using state_t::operator bool;
+    constexpr state_t get_value() const noexcept { return get_state(); }
 };
 
 template <class Value>
 struct optional_result {
     state_t state;
-    std::optional<Value> v {};
+    std::optional<Value> value {};
 
    public:
     using value_type = std::optional<Value>;
@@ -85,7 +83,7 @@ struct optional_result {
       : state(state) {}
     optional_result(state_t state, Value value)
       : state(state)
-      , v(value) {}
+      , value(value) {}
     optional_result(optional_result const&) = default;
     optional_result(optional_result&&) = default;
     optional_result& operator=(optional_result const&) = default;
@@ -94,65 +92,52 @@ struct optional_result {
     constexpr operator bool() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & noexcept { return v; }
-    constexpr decltype(auto) get_value() const& noexcept { return v; }
+    constexpr decltype(auto) get_value() & noexcept { return value; }
+    constexpr decltype(auto) get_value() const& noexcept { return value; }
     constexpr decltype(auto) get_value() && noexcept {
-        return std::move(*this).v;
+        return std::move(*this).value;
     }
 };
 
 template <class Value>
-class standard_result {
-   private:
-    state_t state;
-    Value v;
-    bool is_good = false;
-
-   public:
+struct standard_result : public state_t {
+    [[no_unique_address]] Value value {};
     using value_type = Value;
-    standard_result() = default;
-    standard_result(state_t state, Value value)
-      : state(state)
-      , v(value)
-      , is_good(true) {}
-    standard_result(standard_result const&) = default;
-    standard_result(standard_result&&) = default;
-    standard_result& operator=(standard_result const&) = default;
-    standard_result& operator=(standard_result&&) = default;
 
-    constexpr operator bool() const noexcept { return is_good; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & noexcept { return v; }
-    constexpr decltype(auto) get_value() const& noexcept { return v; }
+    using state_t::get_state;
+    using state_t::operator bool;
+    constexpr void set_state(state_t new_state) noexcept {
+        state_t::operator=(new_state);
+    }
+    constexpr decltype(auto) get_value() & noexcept { return value; }
+    constexpr decltype(auto) get_value() const& noexcept { return value; }
     constexpr decltype(auto) get_value() && noexcept {
-        return std::move(*this).v;
+        return std::move(*this).value;
     }
 };
 template <class Value>
 standard_result(state_t, Value) -> standard_result<Value>;
 
 template <char... ch>
-struct match_constexpr_prefix_result {
+struct match_constexpr_prefix_result : state_t {
    private:
     constexpr static char ch_array[sizeof...(ch) + 1] {ch..., '\0'};
+
+   public:
     /**
      * @brief The prefix that this result matches
      *
      */
     constexpr static state_t value {ch_array, sizeof...(ch)};
-    state_t state;
-    bool is_good = false;
-
-   public:
     using value_type = state_t;
     match_constexpr_prefix_result() = default;
     match_constexpr_prefix_result(state_t state) noexcept
-      : state(state)
-      , is_good(true) {}
-    constexpr operator bool() const noexcept { return is_good; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
+      : state_t(state) {}
+    using state::get_state;
+    using state::operator bool;
+    constexpr void set_state(state_t new_state) noexcept {
+        state::operator=(new_state);
+    }
     constexpr state_t get_value() const noexcept { return value; }
 };
 
