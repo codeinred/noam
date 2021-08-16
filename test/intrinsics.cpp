@@ -30,11 +30,11 @@ struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
 
 bool all_passed = true;
 void test(
-    std::string_view name,
+    noam::state_t name,
     auto&& parser,
-    std::string_view str,
+    noam::state_t str,
     auto expected,
-    std::string_view remainder) {
+    noam::state_t remainder) {
     auto result = parser.parse(str);
     bool passed = result.good() && check(result.get_value(), expected)
                && result.get_state() == remainder;
