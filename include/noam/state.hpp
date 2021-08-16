@@ -170,6 +170,15 @@ struct state {
         }
         return true;
     }
+
+    /**
+     * @brief Returns the lexical ordering. A empty state is always less than
+     * a non-empty state.
+     *
+     * @return std::strong_ordering::equivilant a and b are lexically equivilant
+     * @return std::strong_ordering::less a is lexically less than b
+     * @return std::strong_ordering::greater a is lexically greater than b
+     */
     constexpr std::strong_ordering operator<=>(state other) const noexcept {
         // if either is null, it's unordered
         auto s1 = size();
