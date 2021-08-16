@@ -121,7 +121,13 @@ constexpr noam::parser parse_int = noam::parser {
 };
 ```
 Every time `parse_int` is used, it invokes the coroutine with whatever string
-you're currently parsing (this is `noam::state_t`, which is just an alias for `std::string_view`).
+you're currently parsing. This is tracked by `noam::state_t`, which is a
+high-performance nullable string view implementation. `noam::state_t` is optimized
+for the specific use case of parsing, so operations like `state.substr(pos)` are
+implemented as a single pointer addition. In addition, making `noam::state_t` nullable
+allows result types to forgo storing a bool to indicate failure. Instead, a null state
+is indicative of failure.
+
 The constructor to `noam::co_result` accepts the coroutine handle as an input,
 and invokes it immediately, then stores the result.
 
