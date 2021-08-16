@@ -2,6 +2,34 @@
 
 **Aug 14 2021 NOTE: NOT READY FOR PRODUCTION USE YET**
 
+## Benchmarks
+
+Noam is *fast*. Benchmarks indicate that using high-level parser combinators only
+results in a 9% slowdown (0.91x) when compared to a hand-written parser, and we're
+continuing to work towards making Noam truly zero-overhead.
+
+![Noam benchmark results](/assets/images/benchmark-screenshot.png)
+
+*This benchmark measured the time taken to parse and total 1000 comma-separated values.
+This benchmark was selected because it provides a clean measurment of throughput,
+and avoided allocation and other non-deterministic operations that are sources of noise.*
+
+In order to build and run the benchmarks yourself, clone the project and then run
+the benchmarking script:
+
+```bash
+git clone https://github.com/codeinred/noam && noam/bench.sh
+```
+
+This will work out of the box if the default compiler on your system is a recent
+version of either GCC or Clang, however if necessary you can specify the compiler
+by passing the compiler as a CMake flag:
+```bash
+git clone https://github.com/codeinred/noam &&
+    noam/bench.sh -DCMAKE_CXX_COMPILER=/path/to/your/compiler
+```
+**NB:** Suitable compiler versions include GCC 10.3 or later; or Clang 10.0.0 or later.
+
 ## Directory Structure
 
 ***include* directory:** This directory contains header files for the project
