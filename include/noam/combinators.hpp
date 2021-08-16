@@ -15,7 +15,7 @@ namespace noam {
  */
 template <class Value>
 constexpr auto pure(Value&& value) {
-    return [value = std::forward<Value>(value)](std::string_view state) {
+    return [value = std::forward<Value>(value)](state_t state) {
         return noam::pure_result {state, value};
     } / make_parser;
 }
@@ -140,8 +140,8 @@ constexpr auto test_lookahead(Parser&& parser) {
  *
  * @param prefix the prefix to test
  */
-constexpr auto test_prefix(std::string_view prefix) {
-    return [=](noam::state_t state) {
+constexpr auto test_prefix(state_t prefix) {
+    return [=](state_t state) {
         if (state.starts_with(prefix)) {
             return boolean_result {state.substr(prefix.size()), true};
         } else {
@@ -157,8 +157,8 @@ constexpr auto test_prefix(std::string_view prefix) {
  * @param prefix input to match
  *
  */
-constexpr auto require_prefix(std::string_view prefix) {
-    return [=](noam::state_t state) -> standard_result<std::string_view> {
+constexpr auto require_prefix(state_t prefix) {
+    return [=](state_t state) -> standard_result<state_t> {
         if (state.starts_with(prefix)) {
             return {state.substr(prefix.size()), prefix};
         } else {
