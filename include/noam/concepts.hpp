@@ -1,9 +1,7 @@
 #pragma once
 #include <concepts>
-#include <string_view>
-
+#include <noam/state.hpp>
 namespace noam {
-using state_t = std::string_view;
 
 using std::convertible_to;
 using std::invocable;
@@ -88,7 +86,7 @@ using result_value_t = typename Result::value_type;
  */
 template <class Parser>
 using parser_result_t = std::decay_t<decltype(std::declval<Parser>().parse(
-    std::declval<noam::state_t>()))>;
+    std::declval<state_t>()))>;
 
 /**
  * @brief Returns the value type of the result returned by a parser
