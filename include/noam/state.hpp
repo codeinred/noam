@@ -190,4 +190,6 @@ struct state {
     }
 };
 using state_t = state;
+constexpr state empty_state {};
+constexpr state null_state {};
 } // namespace noam
