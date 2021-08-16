@@ -34,7 +34,7 @@ constexpr noam::parser parse_longs =
 } / noam::make_parser;
 
 int main() {
-    std::string_view str = "1, 2, 3, 4, 5, 10, 20, 30, hello";
+    noam::state_t str = "1, 2, 3, 4, 5, 10, 20, 30, hello";
     std::cout << "Input: \"" << str << "\"\n";
     auto result = parse_longs.parse(str);
     if (result.good()) {
