@@ -43,6 +43,9 @@ struct state {
       : _begin(array)
       , _end(array + (array[N - 1] == '\0' ? N - 1 : N)) {}
 
+    constexpr state(const char* c_ctr) noexcept
+      : _begin(c_ctr)
+      , _end(get_end_of_c_string(c_ctr)) {}
     constexpr state substr(size_t start) const noexcept {
         return {_begin + start, _end};
     }
