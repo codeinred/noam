@@ -170,6 +170,24 @@ struct state {
         }
         return true;
     }
+    constexpr std::strong_ordering operator<=>(state other) const noexcept {
+        // if either is null, it's unordered
+        auto s1 = size();
+        auto s2 = other.size();
+        if (s1 < 0)
+            s1 = 0;
+        if (s2 < 0)
+            s2 = 0;
+        auto len = s1 < s2 ? s1 : s2;
+        for (intptr_t i = 0; i < len; i++) {
+            std::strong_ordering order = _begin[i] <=> other._begin[i];
+            if (order == std::strong_ordering::equivalent)
+                continue;
+            else
+                return order;
+        }
+        return s1 <=> s2;
+    }
 };
 using state_t = state;
 } // namespace noam
