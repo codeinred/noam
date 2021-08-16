@@ -65,6 +65,8 @@ struct state {
     constexpr char const& operator[](size_t index) const noexcept {
         return _begin[index];
     }
+    constexpr char const& first() const noexcept { return *_begin; }
+    constexpr char const& last() const noexcept { return *(_end - 1); }
     /**
      * @brief Checks if the state refers to a valid view (_begin != nullptr)
      *
