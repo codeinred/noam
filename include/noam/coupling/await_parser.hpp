@@ -17,7 +17,7 @@ struct await_parser {
     constexpr state_t copy_state() const noexcept { return *state; }
     constexpr bool await_ready() noexcept {
         result = std::forward<Parser>(parser).parse(copy_state());
-        if (result.good()) {
+        if (result) {
             // We only update the state if the parse succeeded
             *state = result.get_state();
             return true;

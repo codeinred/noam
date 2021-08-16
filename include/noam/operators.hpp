@@ -26,9 +26,9 @@ constexpr auto operator>>(Parser1&& p1, Parser2&& p2) {
             p2 = std::forward<Parser2>(p2)](state_t state)
                -> standard_result<decltype(p2.parse(state).get_value())> {
         auto r1 = p1.parse(state);
-        if (r1.good()) {
+        if (r1) {
             auto r2 = p2.parse(r1.get_state());
-            if (r2.good()) {
+            if (r2) {
                 return {r2.get_state(), std::move(r2).get_value()};
             } else {
                 return {};

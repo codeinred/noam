@@ -236,7 +236,7 @@ struct parser_test {
     void validate(auto result) const {
         using std::literals::string_literals::operator""s;
         // check to ensure that everything is good
-        if (!result.good()) {
+        if (!result) {
             throw std::runtime_error("Parse failed");
         }
         if (result.get_value() != expected_value) {

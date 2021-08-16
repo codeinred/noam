@@ -36,22 +36,16 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
             rest = std::forward<Parser2>(rest),
             op = std::forward<Op>(op)](
                state_t state) -> noam::standard_result<value_t> {
-        auto initial_result = initial.parse(state);
-        if (!initial_result.good()) {
-            return {};
-        }
-        value_t value = initial_result.get_value();
-        state = initial_result.get_state();
-        for(;;) {
-            auto next_result = rest.parse(state);
-            if (next_result.good()) {
+        if (auto initial_result = initial.parse(state)) {
+            value_t value = initial_result.get_value();
+            state = initial_result.get_state();
+            while (auto next_result = rest.parse(state)) {
                 value = op(value, next_result.get_value());
                 state = next_result.get_state();
-            } else {
-                break;
             }
+            return noam::standard_result {state, value};
         }
-        return noam::standard_result {state, value};
+        return {};
     } / make_parser;
 }
 
@@ -108,7 +102,7 @@ constexpr auto test_then(Parser&& parser, Func&& func) {
     return [parser = std::forward<Parser>(parser),
             func = std::forward<Func>(func)](state_t state) -> boolean_result {
         auto result = parser.parse(state);
-        if (result.good()) {
+        if (result) {
             state = result.get_state();
             func(std::move(result).get_value());
             return boolean_result(state, true);
@@ -130,7 +124,7 @@ template <class Parser>
 constexpr auto test_lookahead(Parser&& parser) {
     return
         [parser = std::forward<Parser>(parser)](state_t sv) -> boolean_result {
-            return boolean_result(sv, parser.parse(sv).good());
+            return boolean_result(sv, parser.parse(sv));
         } / make_parser;
 }
 
@@ -190,7 +184,7 @@ constexpr auto lookahead(Parser&& parser) {
         } else if constexpr (result_always_good_v<result_t>) {
             return pure_result {state, std::move(result).get_value()};
         } else {
-            if (result.good()) {
+            if (result) {
                 return standard_result<value_t> {
                     state, std::move(result).get_value()};
             } else {
@@ -210,7 +204,7 @@ template <class Parser>
 constexpr auto try_parse(Parser&& parser) {
     return [parser = std::forward<Parser>(parser)](state_t state) {
         auto result = parser.parse(state);
-        bool result_good = result.good();
+        bool result_good = result;
         return pure_result {
             result_good ? result.get_state() : state,
             result_good ? std::optional {std::move(result).get_value()}
@@ -231,8 +225,8 @@ constexpr auto try_lookahead(Parser&& parser) {
         return pure_result {
             state, // Because we're doing lookahead, state doesn't get
                    // updated
-            result.good() ? std::optional {std::move(result).get_value()}
-                          : std::nullopt};
+            result ? std::optional {std::move(result).get_value()}
+                   : std::nullopt};
     } / make_parser;
 }
 } // namespace noam

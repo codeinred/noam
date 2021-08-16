@@ -37,7 +37,7 @@ int main() {
     noam::state_t str = "1, 2, 3, 4, 5, 10, 20, 30, hello";
     std::cout << "Input: \"" << str << "\"\n";
     auto result = parse_longs.parse(str);
-    if (result.good()) {
+    if (result) {
         std::cout << "Values: ";
         for (auto& v : result.get_value()) {
             std::cout << v << ' ';

@@ -12,7 +12,7 @@ struct parse_promise {
     T value;
     bool is_good = false;
 
-    constexpr bool good() const noexcept { return is_good; }
+    constexpr operator bool() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & noexcept { return value; }

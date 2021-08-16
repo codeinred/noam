@@ -18,7 +18,7 @@ struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     decltype(auto) format(R const& result, FormatContext& ctx) {
-        if (result.good()) {
+        if (result) {
             fmt::format_to(ctx.out(), "[value: ");
             base::format(result.get_value(), ctx);
             return fmt::format_to(ctx.out(), ", state: \"{}\"]", result.get_state());
@@ -46,7 +46,7 @@ void test(
     auto expected,
     noam::state_t remainder) {
     auto result = parser.parse(str);
-    bool passed = result.good() && check(result.get_value(), expected)
+    bool passed = result && check(result.get_value(), expected)
                && result.get_state() == remainder;
     all_passed = all_passed && passed;
     fmt::print(

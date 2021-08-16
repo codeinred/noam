@@ -14,14 +14,14 @@ struct co_result : standard_result<T> {
     using base_t = standard_result<T>;
     using promise_t = parse_promise<T>;
     using handle_t = std::coroutine_handle<promise_t>;
-    using base_t::good;
+    using base_t::operator bool;
     using base_t::get_state;
     using base_t::get_value;
    private:
     static base_t run_handle(handle_t handle) {
         handle.resume();
         promise_t& promise = handle.promise();
-        if (promise.good()) {
+        if (promise) {
             state_t state = promise.get_state();
             return base_t(state, std::move(promise).get_value());
         } else {

@@ -13,7 +13,7 @@ struct pure_result {
     Value value;
 
     // pure_result is a good boy
-    constexpr bool good() const noexcept { return true; }
+    constexpr operator bool() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & { return value; }
@@ -38,14 +38,14 @@ class boolean_result {
     /**
      * @brief Creates a boolean_result such that the initial state is selected
      * if the given result is bad, otherwise result.get_state() is selected. The
-     * value corresponds to result.good().
+     * value corresponds to result.
      *
-     * @param initial The state to use if result.good() returns false
+     * @param initial The state to use if result returns false
      * @param result The result to transform into a boolean result
      */
     constexpr boolean_result(
         state_t initial, parse_result auto&& result) {
-        if (result.good()) {
+        if (result) {
             state = result.get_state();
             value = true;
         } else {
@@ -56,7 +56,7 @@ class boolean_result {
     boolean_result& operator=(boolean_result const&) = default;
     boolean_result& operator=(boolean_result&&) = default;
     // It's always good b/c it always has a value
-    constexpr bool good() const noexcept { return true; }
+    constexpr operator bool() const noexcept { return true; }
     constexpr bool get_value() const noexcept { return value; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
@@ -68,7 +68,7 @@ class boolean_result {
 struct state_result {
     using value_type = state_t;
     state_t state;
-    constexpr bool good() const noexcept { return true; }
+    constexpr operator bool() const noexcept { return true; }
     constexpr state_t get_value() const noexcept { return state; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
@@ -91,7 +91,7 @@ struct optional_result {
     optional_result& operator=(optional_result const&) = default;
     optional_result& operator=(optional_result&&) = default;
 
-    constexpr bool good() const noexcept { return true; }
+    constexpr operator bool() const noexcept { return true; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & noexcept { return v; }
@@ -120,7 +120,7 @@ class standard_result {
     standard_result& operator=(standard_result const&) = default;
     standard_result& operator=(standard_result&&) = default;
 
-    constexpr bool good() const noexcept { return is_good; }
+    constexpr operator bool() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr decltype(auto) get_value() & noexcept { return v; }
@@ -150,20 +150,20 @@ struct match_constexpr_prefix_result {
     match_constexpr_prefix_result(state_t state) noexcept
       : state(state)
       , is_good(true) {}
-    constexpr bool good() const noexcept { return is_good; }
+    constexpr operator bool() const noexcept { return is_good; }
     constexpr state_t get_state() const noexcept { return state; }
     constexpr void set_state(state_t new_state) noexcept { state = new_state; }
     constexpr state_t get_value() const noexcept { return value; }
 };
 
-// The result of fmap'ing a parser result. It preserves BaseResult.good() and
+// The result of fmap'ing a parser result. It preserves BaseResult and
 // BaseResult.get_state(), however transform_result.get_value() is given by
 // func(BaseResult.get_value())
 template <class BaseResult, class Func>
 struct transform_result : BaseResult {
     using value_type = result_value_t<BaseResult>;
     [[no_unique_address]] Func func;
-    using BaseResult::good;
+    using BaseResult::operator bool;
     using BaseResult::new_state;
     constexpr decltype(auto)
     get_value() & noexcept(noexcept(func(BaseResult::get_value()))) {
@@ -191,7 +191,7 @@ struct result_traits<pure_result<Value>> {
 };
 
 // A boolean_result is always good b/c the value returned checks if another
-// parser succeeded. This implies boolean_result.good() always returns true.
+// parser succeeded. This implies boolean_result always returns true.
 // ∴ it is proveable that boolean_result is also a good boy!
 template <>
 struct result_traits<boolean_result> {

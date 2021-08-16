@@ -61,8 +61,8 @@ Every parser in the library is an instantiation of the parser type. The parser
 type is templated on a function that takes a string view, and returns a
 `parse_result`.
 
-A type satisfying `parse_result` represents a successful parse if `result.good()`
-is true, and a failed parse if `result.good()` is false. If the result is good,
+A type satisfying `parse_result` represents a successful parse if `result`
+is true, and a failed parse if `result` is false. If the result is good,
 the remaining portion of the string can be obtained via `result.get_state()`, and the
 value can be obtained via `result.get_value()`.
 
@@ -94,7 +94,7 @@ inline parsers so that the library is near-zero-overhead.
  */
 template <class Result>
 concept parse_result = requires(Result result) {
-    { result.good() } -> convertible_to<bool>;
+    { result } -> convertible_to<bool>;
     { result.get_value() };
     { result.get_state() } -> same_as<state_t>;
 };

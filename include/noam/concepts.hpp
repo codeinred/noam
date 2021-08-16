@@ -19,7 +19,7 @@ concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
  */
 template <class Result>
 concept parse_result = requires(Result result) {
-    { result.good() } -> convertible_to<bool>;
+    { result } -> convertible_to<bool>;
     { result.get_value() };
     { result.get_state() } -> same_as<state_t>;
 };
@@ -51,7 +51,7 @@ concept any_parser = requires(Parser parser, state_t state) {
 template <class Result>
 struct result_traits {
     // Individual Result types can certify that good() always returns true
-    // but by default it is unknown if result.good() always returns true
+    // but by default it is unknown if result always returns true
     // Used to certify a result type as a Good Boy 🐶
     constexpr static bool always_good = false;
 };
