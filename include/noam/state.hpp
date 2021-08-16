@@ -192,4 +192,8 @@ struct state {
 using state_t = state;
 constexpr state empty_state {};
 constexpr state null_state {};
+
+constexpr state operator"" _st(const char* ptr, size_t len) noexcept {
+    return state(ptr, len);
+}
 } // namespace noam
