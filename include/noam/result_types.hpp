@@ -21,8 +21,6 @@ struct optional_ref {
     optional_ref(optional_ref&&) = default;
     optional_ref& operator=(optional_ref const&) = default;
     optional_ref& operator=(optional_ref&&) = default;
-    constexpr operator bool() const noexcept { return pointer != nullptr; }
-    constexpr bool good() const noexcept { return pointer != nullptr; }
     constexpr operator Value&() const noexcept { return *pointer; }
 };
 template <class Value>
@@ -46,24 +44,28 @@ struct optional_result_value {
     constexpr decltype(auto) get_value() & { return *value; }
     constexpr decltype(auto) get_value() const& { return *value; }
     constexpr decltype(auto) get_value() && { return std::move(value); }
+    constexpr operator bool() const noexcept { return bool(value); }
+    constexpr bool good() const noexcept { return bool(value); }
 };
 template <class Value>
 struct optional_result_value<Value&> {
     using value_type = Value&;
     optional_ref<Value> value;
     constexpr Value& get_value() const { return value; }
+    constexpr operator bool() const noexcept { return bool(value.pointer); }
+    constexpr bool good() const noexcept { return bool(value.pointer); }
 };
 
 template <class Value>
 struct pure_result
   : state_t
   , basic_result_value<Value> {
+    using value_type = Value;
     using state_base = state_t;
-    using value_base = basic_result_value<Value>;
     using state_base::get_state;
     using state_base::set_state;
+    using value_base = basic_result_value<Value>;
     using value_base::get_value;
-    using value_type = Value;
     constexpr operator bool() const noexcept { return true; }
     constexpr bool good() const noexcept { return true; }
 };
@@ -79,32 +81,33 @@ template <class Value>
 struct standard_result
   : state_t
   , optional_result_value<Value> {
-    using state_base = state_t;
-    using value_base = optional_result_value<Value>;
-    using state_base::get_state;
-    using state_base::good;
-    using state_base::set_state;
-    using state_base::operator bool;
-    using value_base::get_value;
     using value_type = Value;
+    using state_base = state_t;
+    using state_base::get_state;
+    using state_base::set_state;
+    using value_base = optional_result_value<Value>;
+    using value_base::get_value;
+    using value_base::good;
+    using value_base::operator bool;
 };
 template <default_constructible Value>
 struct standard_result<Value>
   : state_t
   , basic_result_value<Value> {
+    using value_type = Value;
     using state_base = state_t;
-    using value_base = basic_result_value<Value>;
     using state_base::get_state;
     using state_base::good;
     using state_base::set_state;
     using state_base::operator bool;
+    using value_base = basic_result_value<Value>;
     using value_base::get_value;
-    using value_type = Value;
 };
 template <class Value>
 standard_result(state, Value) -> standard_result<Value>;
 template <class Value>
-standard_result(state, std::reference_wrapper<Value>) -> standard_result<Value&>;
+standard_result(state, std::reference_wrapper<Value>)
+    -> standard_result<Value&>;
 
 template <char... ch>
 struct match_constexpr_prefix_result : state_t {
