@@ -4,119 +4,107 @@
 #include <utility>
 
 namespace noam {
-using std::optional;
+struct empty {};
 
+/**
+ * @brief Represents either a reference or a null ptr
+ *
+ * @tparam Value the value to point to
+ */
 template <class Value>
-struct pure_result : public state_t {
-    using value_type = Value;
-    [[no_unique_address]] Value value {};
-    using state_t::get_state;
+struct optional_ref {
+    Value* pointer = nullptr;
+    optional_ref() = default;
+    constexpr optional_ref(Value& value) noexcept
+      : pointer(&value) {}
+    optional_ref(optional_ref const&) = default;
+    optional_ref(optional_ref&&) = default;
+    optional_ref& operator=(optional_ref const&) = default;
+    optional_ref& operator=(optional_ref&&) = default;
+    constexpr operator bool() const noexcept { return pointer != nullptr; }
+    constexpr bool good() const noexcept { return pointer != nullptr; }
+    constexpr operator Value&() const noexcept { return *pointer; }
+};
+template <class Value>
+optional_ref(Value&) -> optional_ref<Value>;
+template <class Value>
+optional_ref(std::reference_wrapper<Value>) -> optional_ref<Value>;
 
-    // pure_result is a good boy
-    constexpr operator bool() const noexcept { return true; }
-    constexpr void set_state(state_t new_state) noexcept {
-        state_t::operator=(new_state);
-    }
+using std::optional;
+template <class Value>
+struct basic_result_value {
+    using value_type = Value;
+    [[no_unique_address]] Value value = Value();
     constexpr decltype(auto) get_value() & { return value; }
     constexpr decltype(auto) get_value() const& { return value; }
     constexpr decltype(auto) get_value() && { return std::move(*this).value; }
 };
 template <class Value>
+struct optional_result_value {
+    using value_type = Value;
+    std::optional<Value> value;
+    constexpr decltype(auto) get_value() & { return *value; }
+    constexpr decltype(auto) get_value() const& { return *value; }
+    constexpr decltype(auto) get_value() && { return std::move(value); }
+};
+template <class Value>
+struct optional_result_value<Value&> {
+    using value_type = Value&;
+    optional_ref<Value> value;
+    constexpr Value& get_value() const { return value; }
+};
+
+template <class Value>
+struct pure_result
+  : state_t
+  , basic_result_value<Value> {
+    using state_base = state_t;
+    using value_base = basic_result_value<Value>;
+    using state_base::get_state;
+    using state_base::set_state;
+    using value_base::get_value;
+    using value_type = Value;
+    constexpr operator bool() const noexcept { return true; }
+    constexpr bool good() const noexcept { return true; }
+};
+template <class Value>
 pure_result(state_t, Value) -> pure_result<Value>;
 
-class boolean_result {
-    state_t state;
-    bool value = false;
-
-   public:
-    using value_type = bool;
-    boolean_result() = default;
-    boolean_result(boolean_result const&) = default;
-    boolean_result(boolean_result&&) = default;
-    constexpr boolean_result(state_t state, bool value) noexcept
-      : state(state)
-      , value(value) {}
-    /**
-     * @brief Creates a boolean_result such that the initial state is selected
-     * if the given result is bad, otherwise result.get_state() is selected. The
-     * value corresponds to result.
-     *
-     * @param initial The state to use if result returns false
-     * @param result The result to transform into a boolean result
-     */
-    constexpr boolean_result(state_t initial, parse_result auto&& result) {
-        if (result) {
-            state = result.get_state();
-            value = true;
-        } else {
-            state = initial;
-            value = false;
-        }
-    }
-    boolean_result& operator=(boolean_result const&) = default;
-    boolean_result& operator=(boolean_result&&) = default;
-    // It's always good b/c it always has a value
-    constexpr operator bool() const noexcept { return true; }
-    constexpr bool get_value() const noexcept { return value; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-};
-
-// used for obtaining the hidden state of the parser (e.g., for lookahead)
-// this is not impure since it cannot be used to modify that state
-// Rather, state_result is a Good Boy b/c it always produces a value! 🐶
-struct state_result : public state_t {
-    using value_type = state_t;
-    using state_t::get_state;
-    using state_t::operator bool;
-    constexpr state_t get_value() const noexcept { return get_state(); }
-};
+using boolean_result = pure_result<bool>;
+using state_result = pure_result<state>;
+template <class Value>
+using optional_result = pure_result<std::optional<Value>>;
 
 template <class Value>
-struct optional_result {
-    state_t state;
-    std::optional<Value> value {};
-
-   public:
-    using value_type = std::optional<Value>;
-    optional_result(state_t state) noexcept
-      : state(state) {}
-    optional_result(state_t state, Value value)
-      : state(state)
-      , value(value) {}
-    optional_result(optional_result const&) = default;
-    optional_result(optional_result&&) = default;
-    optional_result& operator=(optional_result const&) = default;
-    optional_result& operator=(optional_result&&) = default;
-
-    constexpr operator bool() const noexcept { return true; }
-    constexpr state_t get_state() const noexcept { return state; }
-    constexpr void set_state(state_t new_state) noexcept { state = new_state; }
-    constexpr decltype(auto) get_value() & noexcept { return value; }
-    constexpr decltype(auto) get_value() const& noexcept { return value; }
-    constexpr decltype(auto) get_value() && noexcept {
-        return std::move(*this).value;
-    }
-};
-
-template <class Value>
-struct standard_result : public state_t {
-    [[no_unique_address]] Value value {};
+struct standard_result
+  : state_t
+  , optional_result_value<Value> {
+    using state_base = state_t;
+    using value_base = optional_result_value<Value>;
+    using state_base::get_state;
+    using state_base::good;
+    using state_base::set_state;
+    using state_base::operator bool;
+    using value_base::get_value;
     using value_type = Value;
-
-    using state_t::get_state;
-    using state_t::operator bool;
-    constexpr void set_state(state_t new_state) noexcept {
-        state_t::operator=(new_state);
-    }
-    constexpr decltype(auto) get_value() & noexcept { return value; }
-    constexpr decltype(auto) get_value() const& noexcept { return value; }
-    constexpr decltype(auto) get_value() && noexcept {
-        return std::move(*this).value;
-    }
+};
+template <default_constructible Value>
+struct standard_result<Value>
+  : state_t
+  , basic_result_value<Value> {
+    using state_base = state_t;
+    using value_base = basic_result_value<Value>;
+    using state_base::get_state;
+    using state_base::good;
+    using state_base::set_state;
+    using state_base::operator bool;
+    using value_base::get_value;
+    using value_type = Value;
 };
 template <class Value>
-standard_result(state_t, Value) -> standard_result<Value>;
+standard_result(state, Value) -> standard_result<Value>;
+template <class Value>
+standard_result(state, std::reference_wrapper<Value>) -> standard_result<Value&>;
 
 template <char... ch>
 struct match_constexpr_prefix_result : state_t {

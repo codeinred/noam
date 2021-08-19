@@ -105,9 +105,9 @@ constexpr auto test_then(Parser&& parser, Func&& func) {
         if (result) {
             state = result.get_state();
             func(std::move(result).get_value());
-            return boolean_result(state, true);
+            return boolean_result{state, true};
         } else {
-            return boolean_result(state, false);
+            return boolean_result{state, false};
         }
     } / make_parser;
 }

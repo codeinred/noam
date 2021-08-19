@@ -23,9 +23,9 @@ struct co_result : standard_result<T> {
         promise_t& promise = handle.promise();
         if (promise) {
             state_t state = promise.get_state();
-            return base_t(state, std::move(promise).get_value());
+            return base_t{state, std::move(promise).get_value()};
         } else {
-            return base_t();
+            return base_t{};
         }
     }
 

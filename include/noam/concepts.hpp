@@ -24,6 +24,9 @@ concept parse_result = requires(Result result) {
     { result.get_state() } -> same_as<state_t>;
 };
 
+template <class T>
+concept default_constructible = std::is_default_constructible_v<T>;
+
 /**
  * @brief A result type that allows resetting the state via set_state. This
  * makes implementation of the lookahead combinator easier for results that

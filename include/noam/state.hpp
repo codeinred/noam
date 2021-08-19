@@ -206,6 +206,16 @@ struct state {
     constexpr state get_state() const noexcept {
         return *this;
     }
+   protected:
+    /**
+     * @brief Set the state object. This method is only exposed if the result
+     * type explicitly exposes it.
+     *
+     * @param other
+     */
+    constexpr void set_state(state other) noexcept {
+        *this = other;
+    }
 };
 using state_t = state;
 constexpr state empty_state {};
