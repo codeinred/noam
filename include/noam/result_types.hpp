@@ -109,7 +109,7 @@ template <class Value>
 result(state, std::reference_wrapper<Value>) -> result<Value&>;
 
 template <char... ch>
-struct match_constexpr_prefix_result : state_t {
+struct match_constexpr_prefix_result : state {
    private:
     constexpr static char ch_array[sizeof...(ch) + 1] {ch..., '\0'};
 
@@ -118,16 +118,21 @@ struct match_constexpr_prefix_result : state_t {
      * @brief The prefix that this result matches
      *
      */
-    constexpr static state_t value {ch_array, sizeof...(ch)};
-    using value_type = state_t;
+    constexpr static state value {ch_array, sizeof...(ch)};
+    using value_type = state;
     match_constexpr_prefix_result() = default;
-    match_constexpr_prefix_result(state_t state) noexcept
-      : state_t(state) {}
+    match_constexpr_prefix_result(state st) noexcept
+      : state(st) {}
+    match_constexpr_prefix_result(match_constexpr_prefix_result const&) =
+        default;
+    match_constexpr_prefix_result(match_constexpr_prefix_result&&) = default;
+    match_constexpr_prefix_result&
+    operator=(match_constexpr_prefix_result const&) = default;
+    match_constexpr_prefix_result&
+    operator=(match_constexpr_prefix_result&&) = default;
     using state::get_state;
     using state::operator bool;
-    constexpr void set_state(state_t new_state) noexcept {
-        state::operator=(new_state);
-    }
+    using state::set_state;
     constexpr state_t get_value() const noexcept { return value; }
     constexpr operator result<value_type>() const noexcept {
         return {get_state(), get_value()};
