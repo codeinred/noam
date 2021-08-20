@@ -106,8 +106,7 @@ struct result<Value>
 template <class Value>
 result(state, Value) -> result<Value>;
 template <class Value>
-result(state, std::reference_wrapper<Value>)
-    -> result<Value&>;
+result(state, std::reference_wrapper<Value>) -> result<Value&>;
 
 template <char... ch>
 struct match_constexpr_prefix_result : state_t {
@@ -152,6 +151,29 @@ struct transform_result : BaseResult {
     constexpr decltype(auto) get_value() && noexcept(noexcept(
         std::move(*this).func(std::move(*this).BaseResult::get_value()))) {
         return std::move(*this).func(std::move(*this).BaseResult::get_value());
+    }
+    constexpr operator result<value_type>() & noexcept(noexcept(get_value())) {
+        if (*this)
+            return {get_state(), func(BaseResult::get_value())};
+        else
+            return {};
+    }
+    constexpr
+    operator result<value_type>() const& noexcept(noexcept(get_value())) {
+        if (*this)
+            return {get_state(), func(BaseResult::get_value())};
+        else
+            return {};
+    }
+    constexpr operator result<value_type>() && noexcept(
+        noexcept(std::move(*this).get_value())) {
+        if (*this)
+            return {
+                get_state(),
+                std::move(*this).func(
+                    std::move(*this).BaseResult::get_value())};
+        else
+            return {};
     }
 };
 template <class BaseResult, class Func>
