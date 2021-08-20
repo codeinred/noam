@@ -8,7 +8,7 @@ constexpr noam::parser parse_longs =
     [](noam::state_t) -> noam::result<std::vector<long>> {
     using noam::parse_long;
     using noam::parser;
-    using noam::parse_comma_separator;
+    using noam::match_comma_separator;
     using noam::try_parse;
 
     std::vector<long> vect;
@@ -22,7 +22,7 @@ constexpr noam::parser parse_longs =
     // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
     //      === parse_separator<','>
     //      === parse_comma_separator
-    parser next_value = try_parse(parse_comma_separator >> parse_long);
+    parser next_value = try_parse(match_comma_separator >> parse_long);
 
     // While there's a value followed by a comma, add it to the vector
     while (std::optional<long> value = co_await next_value) {

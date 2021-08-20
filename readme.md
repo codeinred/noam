@@ -128,13 +128,15 @@ implemented as a single pointer addition. In addition, making `noam::state_t` nu
 allows result types to forgo storing a bool to indicate failure. Instead, a null state
 is indicative of failure.
 
-The constructor to `noam::result` accepts the coroutine handle as an input,
-and invokes it immediately, then stores the result.
+It's important to note here that `noam::result` doesn't store a coroutine handle,
+nor is it otherwise aware of coroutines at all. Instead,
+`parse_promise::get_return_object()` returns a value that constructs the result type
+by evaluating the coroutine as soon as the result is requested.
 
-Because `co_result` doesn't store the coroutine handle, it's trivially copyable
- and movable, allowing the result to be passed around efficiently.
+This allows `result` to remain trivially copyable and movable, allowing the
+result to be passed around efficiently, or even in registers.
 
-Immediate invocation of the coroutine, together with a trivially copyable `co_result`,
+Immediate invocation of the coroutine, together with a trivially copyable `result`,
 ensures idempotence:
 
 ```cpp
