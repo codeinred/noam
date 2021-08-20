@@ -137,7 +137,7 @@ struct match_constexpr_prefix_result : state_t {
 // func(BaseResult.get_value())
 template <class BaseResult, class Func>
 struct transform_result : BaseResult {
-    using value_type = result_value_t<BaseResult>;
+    using value_type = std::invoke_result_t<Func, result_value_t<BaseResult>>;
     [[no_unique_address]] Func func;
     using BaseResult::operator bool;
     using BaseResult::new_state;
