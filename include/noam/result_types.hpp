@@ -129,6 +129,9 @@ struct match_constexpr_prefix_result : state_t {
         state::operator=(new_state);
     }
     constexpr state_t get_value() const noexcept { return value; }
+    constexpr operator result<value_type>() const noexcept {
+        return {get_state(), get_value()};
+    }
 };
 
 // The result of fmap'ing a parser result. It preserves BaseResult and
