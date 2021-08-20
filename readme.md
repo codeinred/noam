@@ -111,7 +111,7 @@ Let's look at a simple example:
 // Template type of parser deduced automatically
 // This will be noam::parser<(annonymous lambda)>
 constexpr noam::parser parse_int = noam::parser {
-    [](noam::state_t) -> noam::co_result<int> {
+    [](noam::state_t) -> noam::result<int> {
         // Noam provides this already using <charconv> under the hood.
         // See: https://en.cppreference.com/w/cpp/header/charconv
         // The functions provided in <charconv> are known to be highly performant
@@ -128,7 +128,7 @@ implemented as a single pointer addition. In addition, making `noam::state_t` nu
 allows result types to forgo storing a bool to indicate failure. Instead, a null state
 is indicative of failure.
 
-The constructor to `noam::co_result` accepts the coroutine handle as an input,
+The constructor to `noam::result` accepts the coroutine handle as an input,
 and invokes it immediately, then stores the result.
 
 Because `co_result` doesn't store the coroutine handle, it's trivially copyable
@@ -139,7 +139,7 @@ ensures idempotence:
 
 ```cpp
 constexpr noam::parser parse_pair = noam::parser {
-    [](noam::state_t) -> noam::co_result<std::pair<int, int>> {
+    [](noam::state_t) -> noam::result<std::pair<int, int>> {
         // noam::parse_separator handles whitespace surrounding a separator
         // So "   {   5    ,    10    }   " is accepted
         // As is "{5,10}"

@@ -5,7 +5,7 @@
 #include <vector>
 
 constexpr noam::parser parse_longs =
-    [](noam::state_t) -> noam::co_result<std::vector<long>> {
+    [](noam::state_t) -> noam::result<std::vector<long>> {
     using noam::parse_long;
     using noam::parser;
     using noam::parse_comma_separator;

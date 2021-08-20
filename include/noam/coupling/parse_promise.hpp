@@ -6,6 +6,28 @@
 
 namespace noam {
 template <class T>
+struct parse_promise;
+
+template <class T>
+class parse_promise_to_result {
+    using handle_t = std::coroutine_handle<parse_promise<T>>;
+    handle_t handle;
+
+   public:
+    parse_promise_to_result(handle_t handle) noexcept
+      : handle(handle) {}
+    operator result<T>() const {
+        handle.resume();
+        auto& promise = handle.promise();
+        if (promise.is_good) {
+            return {promise.state, promise.value};
+        } else {
+            return {};
+        }
+    }
+    ~parse_promise_to_result() { handle.destroy(); }
+};
+template <class T>
 struct parse_promise {
     using handle_t = std::coroutine_handle<parse_promise>;
     state_t state;
@@ -62,6 +84,8 @@ struct parse_promise {
      *
      * @return std::coroutine_handle<parse_promise>
      */
-    handle_t get_return_object() { return handle_t::from_promise(*this); }
+    parse_promise_to_result<T> get_return_object() {
+        return {handle_t::from_promise(*this)};
+    }
 };
 } // namespace noam

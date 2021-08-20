@@ -112,7 +112,7 @@ constexpr noam::parser add_w_fold = noam::fold_left(
     [](long sum, int value) { return sum + value; });
 
 constexpr noam::parser add_w_test_then =
-    [](noam::state_t) -> noam::co_result<long> {
+    [](noam::state_t) -> noam::result<long> {
     using noam::parse_int;
     using noam::parser;
     using noam::parse_comma_separator;
@@ -139,7 +139,7 @@ constexpr noam::parser add_w_test_then =
 } / noam::make_parser;
 
 constexpr noam::parser add_w_try_parse =
-    [](noam::state_t) -> noam::co_result<long> {
+    [](noam::state_t) -> noam::result<long> {
     using noam::parse_int;
     using noam::parser;
     using noam::parse_comma_separator;
