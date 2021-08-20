@@ -140,7 +140,7 @@ struct transform_result : BaseResult {
     using value_type = std::invoke_result_t<Func, result_value_t<BaseResult>>;
     [[no_unique_address]] Func func;
     using BaseResult::operator bool;
-    using BaseResult::new_state;
+    using BaseResult::get_state;
     constexpr decltype(auto)
     get_value() & noexcept(noexcept(func(BaseResult::get_value()))) {
         return func(BaseResult::get_value());
