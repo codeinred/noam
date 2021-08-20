@@ -78,7 +78,7 @@ template <class Value>
 using optional_result = pure_result<std::optional<Value>>;
 
 template <class Value>
-struct standard_result
+struct result
   : state_t
   , optional_result_value<Value> {
     using value_type = Value;
@@ -91,7 +91,7 @@ struct standard_result
     using value_base::operator bool;
 };
 template <default_constructible Value>
-struct standard_result<Value>
+struct result<Value>
   : state_t
   , basic_result_value<Value> {
     using value_type = Value;
@@ -104,10 +104,10 @@ struct standard_result<Value>
     using value_base::get_value;
 };
 template <class Value>
-standard_result(state, Value) -> standard_result<Value>;
+result(state, Value) -> result<Value>;
 template <class Value>
-standard_result(state, std::reference_wrapper<Value>)
-    -> standard_result<Value&>;
+result(state, std::reference_wrapper<Value>)
+    -> result<Value&>;
 
 template <char... ch>
 struct match_constexpr_prefix_result : state_t {

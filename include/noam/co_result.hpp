@@ -9,9 +9,9 @@
 
 namespace noam {
 template <class T>
-struct co_result : standard_result<T> {
+struct co_result : result<T> {
     using value_type = T;
-    using base_t = standard_result<T>;
+    using base_t = result<T>;
     using promise_t = parse_promise<T>;
     using handle_t = std::coroutine_handle<promise_t>;
     using base_t::operator bool;

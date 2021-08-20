@@ -8,7 +8,7 @@
 namespace noam {
 template <class T>
 constexpr parser parse_charconv =
-    [](state_t state) -> standard_result<T> {
+    [](state_t state) -> result<T> {
     auto start_ = state.data();
     auto end_ = state.data() + state.size();
     T value;

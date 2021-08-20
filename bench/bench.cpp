@@ -166,7 +166,7 @@ constexpr noam::parser add_w_try_parse =
 } / noam::make_parser;
 
 constexpr noam::parser add_w_baseline =
-    [](noam::state_t sv) -> noam::standard_result<long> {
+    [](noam::state_t sv) -> noam::result<long> {
     // Value used to store from_chars output
     int value = 0;
     // Result of std::from_chars

@@ -35,7 +35,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
     return [initial = std::forward<Parser1>(initial),
             rest = std::forward<Parser2>(rest),
             op = std::forward<Op>(op)](
-               state_t state) -> noam::standard_result<value_t> {
+               state_t state) -> noam::result<value_t> {
         if (auto initial_result = initial.parse(state)) {
             value_t value = initial_result.get_value();
             state = initial_result.get_state();
@@ -43,7 +43,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
                 value = op(value, next_result.get_value());
                 state = next_result.get_state();
             }
-            return noam::standard_result {state, value};
+            return noam::result {state, value};
         }
         return {};
     } / make_parser;
@@ -152,7 +152,7 @@ constexpr auto test_prefix(state_t prefix) {
  *
  */
 constexpr auto require_prefix(state_t prefix) {
-    return [=](state_t state) -> standard_result<state_t> {
+    return [=](state_t state) -> result<state_t> {
         if (state.starts_with(prefix)) {
             return {state.substr(prefix.size()), prefix};
         } else {
@@ -177,7 +177,7 @@ constexpr auto lookahead(Parser&& parser) {
         // If the result is lookahead_enabled, we can simply reset the state
         // of the result without transforming it's type. Otherwise, we'll
         // transform it into either a pure_result (if it's always good), or
-        // a standard_result (if it may not always be good)
+        // a result (if it may not always be good)
         if constexpr (lookahead_enabled_result<result_t>) {
             result.set_state(state);
             return result;
@@ -185,10 +185,10 @@ constexpr auto lookahead(Parser&& parser) {
             return pure_result {state, std::move(result).get_value()};
         } else {
             if (result) {
-                return standard_result<value_t> {
+                return noam::result<value_t> {
                     state, std::move(result).get_value()};
             } else {
-                return standard_result<value_t> {};
+                return noam::result<value_t> {};
             }
         }
     } / make_parser;
