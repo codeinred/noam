@@ -57,27 +57,6 @@ struct optional_result_value<Value&> {
 };
 
 template <class Value>
-struct pure_result
-  : state_t
-  , basic_result_value<Value> {
-    using value_type = Value;
-    using state_base = state_t;
-    using state_base::get_state;
-    using state_base::set_state;
-    using value_base = basic_result_value<Value>;
-    using value_base::get_value;
-    constexpr operator bool() const noexcept { return true; }
-    constexpr bool good() const noexcept { return true; }
-};
-template <class Value>
-pure_result(state_t, Value) -> pure_result<Value>;
-
-using boolean_result = pure_result<bool>;
-using state_result = pure_result<state>;
-template <class Value>
-using optional_result = pure_result<std::optional<Value>>;
-
-template <class Value>
 struct result
   : state_t
   , optional_result_value<Value> {
@@ -107,6 +86,30 @@ template <class Value>
 result(state, Value) -> result<Value>;
 template <class Value>
 result(state, std::reference_wrapper<Value>) -> result<Value&>;
+
+template <class Value>
+struct pure_result
+  : state_t
+  , basic_result_value<Value> {
+    using value_type = Value;
+    using state_base = state_t;
+    using state_base::get_state;
+    using state_base::set_state;
+    using value_base = basic_result_value<Value>;
+    using value_base::get_value;
+    constexpr operator bool() const noexcept { return true; }
+    constexpr bool good() const noexcept { return true; }
+    constexpr operator result<value_type>() const noexcept {
+        return {get_state(), get_value()};
+    }
+};
+template <class Value>
+pure_result(state_t, Value) -> pure_result<Value>;
+
+using boolean_result = pure_result<bool>;
+using state_result = pure_result<state>;
+template <class Value>
+using optional_result = pure_result<std::optional<Value>>;
 
 template <char... ch>
 struct match_constexpr_prefix_result : state {
