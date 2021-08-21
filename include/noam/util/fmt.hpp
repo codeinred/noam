@@ -2,7 +2,9 @@
 #if __has_include(<fmt/core.h>)
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <noam/parser.hpp>
 #include <noam/concepts.hpp>
+#include <noam/util/reflection.hpp>
 
 template <noam::parse_result R>
 struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
@@ -27,6 +29,14 @@ struct fmt::formatter<noam::state_t> : fmt::formatter<std::string_view> {
     template <typename FormatContext>
     decltype(auto) format(noam::state_t state, FormatContext& ctx) {
         return base::format(state, ctx);
+    }
+};
+
+template <class T>
+struct fmt::formatter<noam::parser<T>> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    decltype(auto) format(noam::parser<T> const& parser, FormatContext& ctx) {
+        return format_to(ctx.out(), "noam::parser<{}>", noam::name_of_type<T>);
     }
 };
 #else
