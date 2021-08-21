@@ -23,6 +23,11 @@ struct pure {
 template <class Value>
 pure(Value) -> pure<Value>;
 
+/**
+ * @brief Implements a functor that will compare a series of parsers
+ *
+ * @tparam Parsers The parsers to apply either over
+ */
 template <class... Parsers>
 struct either;
 template <>
@@ -108,6 +113,8 @@ struct either<PA, PB...>
         }
     }
 };
+template <class... Parser>
+either(Parser...) -> either<Parser...>;
 
 template <class Func, class Parser>
 struct map {
