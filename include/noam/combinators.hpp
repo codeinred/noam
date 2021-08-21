@@ -25,6 +25,17 @@ pure(Value) -> pure<Value>;
 
 template <class... Parsers>
 struct either;
+template <>
+struct either<> {
+    /**
+     * @brief An empty either always returns a bad result
+     *
+     * @return result<empty> an empty result type representing a bad result
+     */
+    constexpr auto operator()(state_t) const noexcept {
+        return result<empty> {};
+    }
+};
 template <class Parser>
 struct either<Parser> {
     Parser parser;
