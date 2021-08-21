@@ -61,7 +61,7 @@ constexpr parser match_ch = {[](state_t state) -> result<empty> {
  * @tparam char_set The set of characters that can be matched
  */
 template <char... char_set>
-constexpr parser match_any_ch = {[](state_t state) -> pure_result<empty> {
+constexpr parser match_chs = {[](state_t state) -> pure_result<empty> {
     char const* begin = state._begin;
     char const* end = state._end;
     while (begin < end && ((*begin == char_set) || ...))
@@ -78,7 +78,7 @@ constexpr parser match_space = match_ch<' '>;
  * @brief Matches zero or more space characters
  *
  */
-constexpr parser match_spaces = match_any_ch<' '>;
+constexpr parser match_spaces = match_chs<' '>;
 
 template <char... prefix>
 constexpr parser match_constexpr_prefix = {[](state_t state) -> result<empty> {
@@ -141,7 +141,7 @@ constexpr parser count_tabs = count_ch<'\t'>;
 /**
  * @brief Matches 0 or more whitespace characters
  */
-constexpr parser whitespace = match_any_ch<' ', '\t', '\n', '\r'>;
+constexpr parser whitespace = match_chs<' ', '\t', '\n', '\r'>;
 
 /**
  * @brief Parses a line. Newline and carriage return characters are not included
