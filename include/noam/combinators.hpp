@@ -193,7 +193,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
  * parser).parse(str).get_value() = func(parser.parse(str)).get_value())
  */
 template <class Func, any_parser Parser>
-auto map(Func&& func, Parser&& parser) {
+constexpr auto map(Func&& func, Parser&& parser) {
     return parsef::map {std::forward<Func>(func), std::forward<Parser>(parser)};
 }
 
@@ -206,7 +206,7 @@ auto map(Func&& func, Parser&& parser) {
  * first successful result
  */
 template <class... Parsers>
-auto either(Parsers&&... parsers) {
+constexpr auto either(Parsers&&... parsers) {
     return parser {parsef::either {std::forward<Parsers>(parsers)...}};
 }
 
