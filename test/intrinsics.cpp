@@ -1,71 +1,9 @@
 #include <cmath>
-#include <cstdio>
-#include <fmt/core.h>
-#include <fmt/format.h>
+#include <noam/util/fmt.hpp>
 #include <noam/intrinsics.hpp>
 #include <optional>
+#include "test_helpers.hpp"
 
-bool check(auto x, auto y) { return x == y; }
-bool check(float x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-6; }
-bool check(double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-15; }
-bool check(long double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-15; }
-
-enum class color { red, green, blue };
-
-template <noam::parse_result R>
-struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
-    using base = fmt::formatter<noam::result_value_t<R>>;
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    decltype(auto) format(R const& result, FormatContext& ctx) {
-        if (result) {
-            fmt::format_to(ctx.out(), "[value: ");
-            base::format(result.get_value(), ctx);
-            return fmt::format_to(ctx.out(), ", state: \"{}\"]", result.get_state());
-        } else {
-            return fmt::format_to(ctx.out(), "failed");
-        }
-    }
-};
-
-template <>
-struct fmt::formatter<noam::state_t> : fmt::formatter<std::string_view> {
-    using base = fmt::formatter<std::string_view>;
-    // parse is inherited from formatter<string_view>.
-    template <typename FormatContext>
-    decltype(auto) format(noam::state_t state, FormatContext& ctx) {
-        return base::format(state, ctx);
-    }
-};
-
-bool all_passed = true;
-void test(
-    noam::state_t name,
-    auto&& parser,
-    noam::state_t str,
-    auto expected,
-    noam::state_t remainder) {
-    auto result = parser.parse(str);
-    bool passed = result && check(result.get_value(), expected)
-               && result.get_state() == remainder;
-    all_passed = all_passed && passed;
-    fmt::print(
-        R"(
-- name:      "{}"
-  input:     "{}"
-  expected:  {}
-  obtained:  {}
-  passed:    {}
-)",
-        name,
-        str,
-        noam::pure_result{remainder, expected},
-        result,
-        passed);
-}
-
-#define TEST(parser, str, expected, remainder)                                 \
-    test(#parser, parser, str, expected, remainder)
 int main() {
     TEST(noam::parse_short, "1234. hello", 1234, ". hello");
     TEST(noam::parse_ushort, "1234. hello", 1234, ". hello");
