@@ -1,3 +1,3 @@
 #include <noam/combinators.hpp>
 
-int main(){}
+int main() {}
