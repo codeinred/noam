@@ -198,6 +198,19 @@ auto map(Func&& func, Parser&& parser) {
 }
 
 /**
+ * @brief Creates a backtracking parser that will test each parser in sequence
+ *
+ * @tparam Parsers the types of the parsers to test
+ * @param parsers the parsers to test
+ * @return parser A parser that will test each input in sequence, returning the
+ * first successful result
+ */
+template <class... Parsers>
+auto either(Parsers&&... parsers) {
+    return parser {parsef::either {std::forward<Parsers>(parsers)...}};
+}
+
+/**
  * @brief Takes a parser parser and produces a new parser that generates a true
  * if parser succeeded and false if parser failed
  *
