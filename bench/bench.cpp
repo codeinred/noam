@@ -1,7 +1,7 @@
 #include <benchmark/benchmark.h>
 
 #include <algorithm>
-#include <noam/co_result.hpp>
+#include <noam/co_await.hpp>
 #include <noam/combinators.hpp>
 #include <noam/intrinsics.hpp>
 #include <random>
