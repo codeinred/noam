@@ -142,54 +142,6 @@ struct match_constexpr_prefix_result : state {
     }
 };
 
-// The result of fmap'ing a parser result. It preserves BaseResult and
-// BaseResult.get_state(), however transform_result.get_value() is given by
-// func(BaseResult.get_value())
-template <class BaseResult, class Func>
-struct transform_result : BaseResult {
-    using value_type = std::invoke_result_t<Func, result_value_t<BaseResult>>;
-    [[no_unique_address]] Func func;
-    using BaseResult::operator bool;
-    using BaseResult::get_state;
-    constexpr decltype(auto)
-    get_value() & noexcept(noexcept(func(BaseResult::get_value()))) {
-        return func(BaseResult::get_value());
-    }
-    constexpr decltype(auto)
-    get_value() const& noexcept(noexcept(func(BaseResult::get_value()))) {
-        return func(BaseResult::get_value());
-    }
-    constexpr decltype(auto) get_value() && noexcept(noexcept(
-        std::move(*this).func(std::move(*this).BaseResult::get_value()))) {
-        return std::move(*this).func(std::move(*this).BaseResult::get_value());
-    }
-    constexpr operator result<value_type>() & noexcept(noexcept(get_value())) {
-        if (*this)
-            return {get_state(), func(BaseResult::get_value())};
-        else
-            return {};
-    }
-    constexpr
-    operator result<value_type>() const& noexcept(noexcept(get_value())) {
-        if (*this)
-            return {get_state(), func(BaseResult::get_value())};
-        else
-            return {};
-    }
-    constexpr operator result<value_type>() && noexcept(
-        noexcept(std::move(*this).get_value())) {
-        if (*this)
-            return {
-                get_state(),
-                std::move(*this).func(
-                    std::move(*this).BaseResult::get_value())};
-        else
-            return {};
-    }
-};
-template <class BaseResult, class Func>
-transform_result(BaseResult, Func) -> transform_result<BaseResult, Func>;
-
 // *To be read in the same voice you'd use to speak to a dog who's a good boy.*
 // Who's a good boy? pure_result is! You're a good boy, aren't you? Yes you are!
 // You're always good and you're idempotent and your state is always identical
@@ -219,12 +171,5 @@ struct result_traits<state_result> {
 template <class Value>
 struct result_traits<optional_result<Value>> {
     constexpr static bool always_good = true;
-};
-
-// transform_result<BaseResult, Func> is a good boy if and only if BaseResult
-// is a good boy. 🐶
-template <class BaseResult, class Func>
-struct result_traits<transform_result<BaseResult, Func>> {
-    constexpr static bool always_good = result_always_good_v<BaseResult>;
 };
 } // namespace noam
