@@ -92,6 +92,15 @@ using parser_result_t = std::decay_t<decltype(std::declval<Parser>().parse(
     std::declval<state_t>()))>;
 
 /**
+ * @brief Checks if a parser returns a result that is always good
+ *
+ * @tparam Parser
+ */
+template <class Parser>
+constexpr bool parser_always_good_v =
+    result_always_good_v<parser_result_t<Parser>>;
+
+/**
  * @brief Returns the value type of the result returned by a parser
  *
  * @tparam Parser the parser
