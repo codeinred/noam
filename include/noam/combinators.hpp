@@ -6,7 +6,26 @@
 
 // This file holds functios that return parsers based on inputs
 
+/**
+ * @brief noam::parsef contains the definitions of parser functors. These
+ * represent the implementation of various combinators
+ *
+ */
+namespace noam::parsef {
+template <class Value>
+struct pure {
+    [[no_unique_address]] Value value {};
+    constexpr auto operator()(state_t state) const
+        noexcept(noexcept(noam::pure_result<Value> {state, value})) {
+        return noam::pure_result<Value> {state, value};
+    }
+};
+template <class Value>
+pure(Value) -> pure<Value>;
+} // namespace noam::parsef
 namespace noam {
+template <class Value>
+using pure_parser = parser<parsef::pure<Value>>;
 /**
  * @brief Function that takes a value and returns a pure parser that returns
  * that value
@@ -15,9 +34,7 @@ namespace noam {
  */
 template <class Value>
 constexpr auto pure(Value&& value) {
-    return [value = std::forward<Value>(value)](state_t state) {
-        return noam::pure_result {state, value};
-    } / make_parser;
+    return parser {parsef::pure {std::forward<Value>(value)}};
 }
 
 /**
@@ -34,8 +51,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
     using value_t = parser_value_t<Parser1>;
     return [initial = std::forward<Parser1>(initial),
             rest = std::forward<Parser2>(rest),
-            op = std::forward<Op>(op)](
-               state_t state) -> noam::result<value_t> {
+            op = std::forward<Op>(op)](state_t state) -> noam::result<value_t> {
         if (auto initial_result = initial.parse(state)) {
             value_t value = initial_result.get_value();
             state = initial_result.get_state();
@@ -105,9 +121,9 @@ constexpr auto test_then(Parser&& parser, Func&& func) {
         if (result) {
             state = result.get_state();
             func(std::move(result).get_value());
-            return boolean_result{state, true};
+            return boolean_result {state, true};
         } else {
-            return boolean_result{state, false};
+            return boolean_result {state, false};
         }
     } / make_parser;
 }
