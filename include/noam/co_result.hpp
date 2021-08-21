@@ -7,11 +7,6 @@
 #include <optional>
 #include <string_view>
 
-namespace noam {
-template <class T>
-using co_result = result<T>;
-}
-
 template <class T, class Functor>
 struct std::coroutine_traits<noam::result<T>, Functor, noam::state_t> {
     using promise_type = noam::parse_promise<T>;
