@@ -44,8 +44,8 @@ struct either<> {
 template <class Parser>
 struct either<Parser> {
     Parser parser;
-    using value_t = parser_value_t<Parser>;
-    using result_t = parser_result_t<Parser>;
+    using value_type = parser_value_t<Parser>;
+    using result_type = parser_result_t<Parser>;
     constexpr auto operator()(state_t st) const
         noexcept(noexcept(parser.parse(st))) {
         return parser.parse(st);
@@ -81,13 +81,11 @@ struct either<PA, PB> {
     }
 };
 template <class PA, class... PB>
-struct either<PA, PB...>
-  : either<PA>
-  , either<PB...> {
-    using BaseA = either<PA>;
-    using BaseB = either<PB...>;
-    using resultA = typename BaseA::result_type;
-    using resultB = typename BaseB::result_type;
+struct either<PA, PB...> {
+    PA first;
+    either<PB...> rest;
+    using resultA = noam::parser_result_t<PA>;
+    using resultB = typename either<PB...>::result_type;
     constexpr static bool always_good =
         result_always_good_v<resultA> || result_always_good_v<resultB>;
     using value_type =
@@ -95,7 +93,7 @@ struct either<PA, PB...>
     using result_type = std::
         conditional_t<always_good, pure_result<value_type>, result<value_type>>;
     constexpr auto operator()(state_t st) const -> result_type {
-        if (auto res = BaseA::operator()(st)) {
+        if (auto res = first.parse(st)) {
             if constexpr (std::constructible_from<result_type, resultA&&>) {
                 return result_type(std::move(res));
             } else {
@@ -103,9 +101,9 @@ struct either<PA, PB...>
             }
         }
         if constexpr (std::constructible_from<result_type, resultB&&>) {
-            return result_type(BaseB::operator()(st));
+            return result_type(rest(st));
         } else {
-            if (auto res = BaseB::operator()(st)) {
+            if (auto res = rest(st)) {
                 return {res.get_state(), std::move(res).get_value()};
             } else {
                 return {};
@@ -210,6 +208,41 @@ constexpr auto either(Parsers&&... parsers) {
     return parser {parsef::either {std::forward<Parsers>(parsers)...}};
 }
 
+template <class... First, class Last>
+constexpr auto join(First&&... first, Last&& last) {
+    constexpr bool first_always_good = (parser_always_good_v<First> && ...);
+    return [... first = std::forward<First>(first),
+            last = std::forward<Last>(last)](state_t st) {
+        if constexpr (first_always_good) {
+            ((st = first.parse(st).get_state()), ...);
+            return last.parse(st);
+        } else {
+            auto try_to_parse = [&](auto& parser) -> bool {
+                if (auto result = parser.parse(st)) {
+                    st = result.get_state();
+                    return true;
+                }
+                return false;
+            };
+            using value_type = parser_value_t<Last>;
+            using result_type = result<value_type>;
+            using last_result_type = parser_result_t<Last>;
+            if ((try_to_parse(first) && ...)) {
+                if constexpr (std::constructible_from<
+                                  result_type,
+                                  last_result_type>) {
+                    return result_type(last.parse(st));
+                } else {
+                    if (auto res = last.parse(st)) {
+                        return result_type {res.get_state(), res.get_value()};
+                    } else {
+                        return result_type {};
+                    }
+                }
+            }
+        }
+    };
+}
 /**
  * @brief Takes a parser parser and produces a new parser that generates a true
  * if parser succeeded and false if parser failed
