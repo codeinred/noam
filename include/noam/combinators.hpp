@@ -229,6 +229,26 @@ constexpr auto either(Parsers&&... parsers) {
     return parser {parsef::either {std::forward<Parsers>(parsers)...}};
 }
 
+/**
+ * @brief Parses a value surrounded by a prefix given by Parser `pre` and a
+ * postfix given by Parser `post`.
+ *
+ * @tparam Prefix type of the parser for the prefix
+ * @tparam Parser type of the parser for the value
+ * @tparam Postfix type of the parser for the postfix
+ * @param pre parser for the prefix
+ * @param par parser for the value
+ * @param post parser for the postfix
+ * @return parser
+ */
+template <class Prefix, class Parser, class Postfix>
+constexpr auto surround(Prefix&& pre, Parser&& par, Postfix&& post) {
+    return parser {parsef::surround {
+        std::forward<Prefix>(pre),
+        std::forward<Parser>(par),
+        std::forward<Postfix>(post)}};
+}
+
 template <class... First, class Last>
 constexpr auto join(First&&... first, Last&& last) {
     constexpr bool first_always_good = (parser_always_good_v<First> && ...);

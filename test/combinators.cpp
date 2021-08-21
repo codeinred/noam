@@ -4,8 +4,8 @@
 
 constexpr noam::parser int_or_42 =
     noam::either(noam::parse_int, noam::pure(42));
-constexpr noam::parser ws_int_ws = {noam::parsef::surround {
-    noam::whitespace, noam::parse_int, noam::whitespace}};
+constexpr noam::parser ws_int_ws =
+    noam::surround(noam::whitespace, noam::parse_int, noam::whitespace);
 
 static_assert(
     std::same_as<
