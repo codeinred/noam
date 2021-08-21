@@ -22,6 +22,81 @@ struct pure {
 };
 template <class Value>
 pure(Value) -> pure<Value>;
+
+template <class... Parsers>
+struct either;
+template <class Parser>
+struct either<Parser> {
+    Parser parser;
+    using value_t = parser_value_t<Parser>;
+    using result_t = parser_result_t<Parser>;
+    constexpr auto operator()(state_t st) const
+        noexcept(noexcept(parser.parse(st))) {
+        return parser.parse(st);
+    }
+};
+template <class PA, class PB>
+struct either<PA, PB> {
+    using resultA = parser_result_t<PA>;
+    using resultB = parser_result_t<PB>;
+    PA parserA;
+    PB parserB;
+    constexpr static bool always_good =
+        result_always_good_v<resultA> || result_always_good_v<resultB>;
+    using value_type =
+        std::common_type_t<result_value_t<resultA>, result_value_t<resultB>>;
+    using result_type = std::
+        conditional_t<always_good, pure_result<value_type>, result<value_type>>;
+    constexpr auto operator()(state_t st) const noexcept(
+        noexcept(value_type(parserA.parse(st).get_value())) && noexcept(
+            value_type(parserB.parse(st).get_value()))) -> result_type {
+        if (auto res = parserA.parse(st)) {
+            return {res.get_state(), std::move(res).get_value()};
+        }
+        if constexpr (std::constructible_from<result_type, resultB&&>) {
+            return result_type(parserB.parse(st));
+        } else {
+            if (auto res = parserB.parse(st)) {
+                return {res.get_state(), std::move(res).get_value()};
+            } else {
+                return {};
+            }
+        }
+    }
+};
+template <class PA, class... PB>
+struct either<PA, PB...>
+  : either<PA>
+  , either<PB...> {
+    using BaseA = either<PA>;
+    using BaseB = either<PB...>;
+    using resultA = typename BaseA::result_type;
+    using resultB = typename BaseB::result_type;
+    constexpr static bool always_good =
+        result_always_good_v<resultA> || result_always_good_v<resultB>;
+    using value_type =
+        std::common_type_t<result_value_t<resultA>, result_value_t<resultB>>;
+    using result_type = std::
+        conditional_t<always_good, pure_result<value_type>, result<value_type>>;
+    constexpr auto operator()(state_t st) const -> result_type {
+        if (auto res = BaseA::operator()(st)) {
+            if constexpr (std::constructible_from<result_type, resultA&&>) {
+                return result_type(std::move(res));
+            } else {
+                return {res.get_state(), std::move(res).get_value()};
+            }
+        }
+        if constexpr (std::constructible_from<result_type, resultB&&>) {
+            return result_type(BaseB::operator()(st));
+        } else {
+            if (auto res = BaseB::operator()(st)) {
+                return {res.get_state(), std::move(res).get_value()};
+            } else {
+                return {};
+            }
+        }
+    }
+};
 } // namespace noam::parsef
 namespace noam {
 template <class Value>
