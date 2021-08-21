@@ -136,6 +136,27 @@ struct map {
         }
     }
 };
+
+template <class Prefix, class Value, class Postfix>
+struct surround {
+    [[no_unique_address]] Prefix prefix {};
+    [[no_unique_address]] Value parser {};
+    [[no_unique_address]] Postfix postfix {};
+    constexpr auto operator()(state_t st) const {
+        using value_type = parser_value_t<Value>;
+        if (auto pre = prefix.parse(st)) {
+            if (auto value = parser.parse(pre.get_state())) {
+                if (auto post = prefix.parse(value.get_state())) {
+                    return noam::result<value_type> {
+                        post.get_state(), std::move(value).get_value()};
+                }
+            }
+        }
+        return noam::result<value_type> {};
+    }
+};
+template <class A, class B, class C>
+surround(A, B, C) -> surround<A, B, C>;
 } // namespace noam::parsef
 namespace noam {
 template <class Value>
@@ -206,6 +227,26 @@ constexpr auto map(Func&& func, Parser&& parser) {
 template <class... Parsers>
 constexpr auto either(Parsers&&... parsers) {
     return parser {parsef::either {std::forward<Parsers>(parsers)...}};
+}
+
+/**
+ * @brief Parses a value surrounded by a prefix given by Parser `pre` and a
+ * postfix given by Parser `post`.
+ *
+ * @tparam Prefix type of the parser for the prefix
+ * @tparam Parser type of the parser for the value
+ * @tparam Postfix type of the parser for the postfix
+ * @param pre parser for the prefix
+ * @param par parser for the value
+ * @param post parser for the postfix
+ * @return parser
+ */
+template <class Prefix, class Parser, class Postfix>
+constexpr auto surround(Prefix&& pre, Parser&& par, Postfix&& post) {
+    return parser {parsef::surround {
+        std::forward<Prefix>(pre),
+        std::forward<Parser>(par),
+        std::forward<Postfix>(post)}};
 }
 
 template <class... First, class Last>

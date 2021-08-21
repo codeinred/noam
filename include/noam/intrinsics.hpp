@@ -144,6 +144,12 @@ constexpr parser count_tabs = count_ch<'\t'>;
 constexpr parser whitespace = match_chs<' ', '\t', '\n', '\r'>;
 
 /**
+ * @brief Matches 0 or more whitespace characters. Shorthand for
+ * noam::whitespace
+ */
+constexpr parser ws = whitespace;
+
+/**
  * @brief Parses a line. Newline and carriage return characters are not included
  * in the parsed line.
  *
