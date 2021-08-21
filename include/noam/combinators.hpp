@@ -108,6 +108,29 @@ struct either<PA, PB...>
         }
     }
 };
+
+template <class Func, class Parser>
+struct map {
+    [[no_unique_address]] Func func;
+    [[no_unique_address]] Parser parser;
+    using result_before_map = parser_result_t<Parser>;
+    constexpr static bool always_good = result_always_good_v<result_before_map>;
+    using value_type = std::invoke_result_t<Func, parser_value_t<Parser>>;
+    constexpr auto operator()(state_t st) const {
+        if constexpr (always_good) {
+            auto result = parser.parse(st);
+            return pure_result<value_type> {
+                result.get_state(), func(std::move(result).get_value())};
+        } else {
+            if (auto result = parser.parse(st)) {
+                return noam::result<value_type> {
+                    result.get_state(), func(std::move(result).get_value())};
+            } else {
+                return noam::result<value_type> {};
+            }
+        }
+    }
+};
 } // namespace noam::parsef
 namespace noam {
 template <class Value>
@@ -164,10 +187,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
  */
 template <class Func, any_parser Parser>
 auto map(Func&& func, Parser&& parser) {
-    return [f = std::forward<Func>(func),
-            parser = std::forward<Parser>(parser)](state_t state) {
-        return transform_result {parser.parse(state), f};
-    };
+    return parsef::map {std::forward<Func>(func), std::forward<Parser>(parser)};
 }
 
 /**
