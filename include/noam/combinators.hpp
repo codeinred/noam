@@ -136,6 +136,27 @@ struct map {
         }
     }
 };
+
+template <class Prefix, class Value, class Postfix>
+struct surround {
+    [[no_unique_address]] Prefix prefix {};
+    [[no_unique_address]] Value parser {};
+    [[no_unique_address]] Postfix postfix {};
+    constexpr auto operator()(state_t st) const {
+        using value_type = parser_value_t<Value>;
+        if (auto pre = prefix.parse(st)) {
+            if (auto value = parser.parse(pre.get_state())) {
+                if (auto post = prefix.parse(value.get_state())) {
+                    return noam::result<value_type> {
+                        post.get_state(), std::move(value).get_value()};
+                }
+            }
+        }
+        return noam::result<value_type> {};
+    }
+};
+template <class A, class B, class C>
+surround(A, B, C) -> surround<A, B, C>;
 } // namespace noam::parsef
 namespace noam {
 template <class Value>
