@@ -12,10 +12,10 @@ constexpr noam::parser parse_longs =
     using noam::try_parse;
 
     std::vector<long> vect;
-
+    
     // Get the first value
     vect.push_back(co_await parse_long);
-
+     
     // (>>) : Parser a -> Parser b -> Parser b
     // noam::try_parse : Parser a -> Parser Maybe a
     // NB: parse_comma_separator reads whitespace on either side of the comma
