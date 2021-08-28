@@ -1,6 +1,6 @@
 #pragma once
-#include <noam/util/value_wrappers.hpp>
 #include <noam/concepts.hpp>
+#include <noam/util/value_wrappers.hpp>
 #include <optional>
 #include <utility>
 
@@ -19,6 +19,23 @@ struct result
     using value_base::get_value;
     using value_base::good;
     using value_base::operator bool;
+
+    result& operator=(result const&) = default;
+    result& operator=(result&&) = default;
+    template <class Result>
+    constexpr result& operator=(Result&& r) requires(!std::is_same_v<Result, result&>) {
+        if constexpr (result_always_good_v<Result>) {
+            return operator=
+                (result {r.get_state(), std::forward<Result>(r).get_value()});
+        } else {
+            if (r) {
+                return operator=(result {
+                    r.get_state(), std::forward<Result>(r).get_value()});
+            } else {
+                return operator=(result {});
+            }
+        }
+    }
 };
 template <default_constructible Value>
 struct result<Value>
