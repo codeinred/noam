@@ -368,6 +368,15 @@ constexpr auto make(P&&... parsers) {
     }};
 }
 
+/**
+ * @brief Parses a sequence of elements, returning the result as a vector
+ *
+ * @tparam ParseElem
+ * @tparam ParseSep
+ * @param elem
+ * @param sep
+ * @return constexpr auto
+ */
 template <class ParseElem, class ParseSep>
 constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
     constexpr int initial_reserve = 16;
