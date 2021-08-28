@@ -333,7 +333,7 @@ constexpr bool parse_assign(state_t& st, P const& parser, Result& r) {
  * @return auto
  */
 template <class T, class... P>
-auto make(P&&... parsers) {
+constexpr auto make(P&&... parsers) {
     return parser {
         [... parsers = std::forward<P>(parsers)](state_t st) -> result<T> {
             return [&](auto... results) -> result<T> {
@@ -357,7 +357,7 @@ auto make(P&&... parsers) {
  * @return auto
  */
 template <template <class...> class T, class... P>
-auto make(P&&... parsers) {
+constexpr auto make(P&&... parsers) {
     return parser {
         [... parsers = std::forward<P>(parsers)](state_t st) {
             return [&](auto... results) {
