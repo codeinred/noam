@@ -4,6 +4,7 @@
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/util/helpers.hpp>
 
 // This file holds functios that return parsers based on inputs
 
