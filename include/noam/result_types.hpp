@@ -38,6 +38,19 @@ result(state, Value) -> result<Value>;
 template <class Value>
 result(state, std::reference_wrapper<Value>) -> result<Value&>;
 
+/**
+ * @brief Represents a type that is implicitly convertible to any result<T>,
+ * resulting in a default-constructed result<T> representing a failed result.
+ *
+ */
+struct null_result_t {
+    template <class T>
+    constexpr operator result<T>() const noexcept(noexcept(result<T>())) {
+        return result<T>();
+    }
+};
+constexpr null_result_t null_result;
+
 template <class Value>
 struct pure_result
   : state_t
