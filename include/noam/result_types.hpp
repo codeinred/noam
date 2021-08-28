@@ -136,4 +136,18 @@ template <class Value>
 struct result_traits<optional_result<Value>> {
     constexpr static bool always_good = true;
 };
+
+/**
+ * @brief If the result type of Parser is default_constructible, obtains that
+ * type, otherwise returns result<parser_value_t<Parser>>, which should always
+ * be default constructible
+ *
+ * @tparam Parser the parser to obtain a result type for
+ */
+template <class Parser>
+using default_constructible_parser_result_t = std::conditional_t<
+    std::is_default_constructible_v<parser_result_t<Parser>>,
+    parser_result_t<Parser>,
+    result<parser_value_t<Parser>>>;
+
 } // namespace noam
