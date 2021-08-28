@@ -369,7 +369,7 @@ constexpr auto make(P&&... parsers) {
 }
 
 template <class ParseElem, class ParseSep>
-constexpr auto vector_of(ParseElem&& elem, ParseSep&& sep) {
+constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
     constexpr int initial_reserve = 16;
     using T = parser_value_t<ParseElem>;
     return parser {
