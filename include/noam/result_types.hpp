@@ -1,5 +1,5 @@
 #pragma once
-#include <noam/concepts.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/util/value_wrappers.hpp>
 #include <optional>
 #include <utility>

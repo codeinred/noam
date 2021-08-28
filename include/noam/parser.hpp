@@ -1,5 +1,5 @@
 #pragma once
-#include <noam/concepts.hpp>
+#include <noam/type_traits.hpp>
 
 namespace noam {
 // Type which represents a parser

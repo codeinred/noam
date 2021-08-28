@@ -1,6 +1,6 @@
 #pragma once
 #include <utility>
-#include <noam/concepts.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/util/stdlib_coroutine.hpp>
 
 namespace noam {

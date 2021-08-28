@@ -3,7 +3,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <noam/parser.hpp>
-#include <noam/concepts.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/util/reflection.hpp>
 
 template <noam::parse_result R>

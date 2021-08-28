@@ -1,5 +1,5 @@
 #pragma once
-#include <noam/concepts.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/coupling/parse_promise.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
