@@ -1,9 +1,10 @@
 #pragma once
-#include <noam/util/parsef.hpp>
-#include <noam/type_traits.hpp>
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/type_traits.hpp>
+#include <noam/util/parsef.hpp>
+#include <vector>
 
 namespace noam {
 template <class Value>
@@ -358,14 +359,43 @@ constexpr auto make(P&&... parsers) {
  */
 template <template <class...> class T, class... P>
 constexpr auto make(P&&... parsers) {
-    return parser {
-        [... parsers = std::forward<P>(parsers)](state_t st) {
-            return [&](auto... results) {
-                return (parse_assign(st, parsers, results) && ...)
-                    ? result {st, T {std::move(results).get_value()...}}
-                    : null_result;
-            }(default_constructible_parser_result_t<P> {}...);
-        }};
+    return parser {[... parsers = std::forward<P>(parsers)](state_t st) {
+        return [&](auto... results) {
+            return (parse_assign(st, parsers, results) && ...)
+                     ? result {st, T {std::move(results).get_value()...}}
+                     : null_result;
+        }(default_constructible_parser_result_t<P> {}...);
+    }};
 }
 
+template <class ParseElem, class ParseSep>
+constexpr auto vector_of(ParseElem&& elem, ParseSep&& sep) {
+    constexpr int initial_reserve = 16;
+    using T = parser_value_t<ParseElem>;
+    return parser {
+        [elem = std::forward<ParseElem>(elem),
+         sep = std::forward<ParseSep>(sep)](
+            state_t st) -> pure_result<std::vector<T>> {
+            if (auto first = elem.parse(st)) {
+                // Update the state since we obtained the first value
+                st = first.get_state();
+
+                std::vector<T> value;
+                value.resreve(initial_reserve);
+                value.push_back(std::move(first).get_value());
+                while (auto sep_ = sep.parse(st)) {
+                    if (auto next = elem.parse(sep_.get_state())) {
+                        // Update the state since we obtained the next value
+                        st = next.get_state();
+                        value.push_back(std::move(next).get_value());
+                    } else {
+                        break;
+                    }
+                }
+                return {st, std::move(value)};
+            } else {
+                return {st, std::vector<T>()};
+            }
+        }};
+}
 } // namespace noam
