@@ -1,9 +1,9 @@
 #pragma once
 
-#include <noam/type_traits.hpp>
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/util/helpers.hpp>
 
 // This file holds functios that return parsers based on inputs
@@ -65,9 +65,10 @@ struct either<PA, PB> {
         std::common_type_t<result_value_t<resultA>, result_value_t<resultB>>;
     using result_type = std::
         conditional_t<always_good, pure_result<value_type>, result<value_type>>;
-    constexpr auto operator()(state_t st) const noexcept(
-        noexcept(value_type(parserA.parse(st).get_value())) && noexcept(
-            value_type(parserB.parse(st).get_value()))) -> result_type {
+    constexpr auto operator()(state_t st) const                         // <br>
+        noexcept(noexcept(value_type(parserA.parse(st).get_value())) && // <br>
+                 noexcept(value_type(parserB.parse(st).get_value())))
+            -> result_type {
         if (auto res = parserA.parse(st)) {
             return {res.get_state(), std::move(res).get_value()};
         }
