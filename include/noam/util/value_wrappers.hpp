@@ -37,9 +37,9 @@ template <class Value>
 struct optional_result_value {
     using value_type = Value;
     std::optional<Value> value;
-    constexpr decltype(auto) get_value() & { return *value; }
-    constexpr decltype(auto) get_value() const& { return *value; }
-    constexpr decltype(auto) get_value() && { return std::move(value); }
+    constexpr decltype(auto) get_value() & { return (*value); }
+    constexpr decltype(auto) get_value() const& { return (*value); }
+    constexpr decltype(auto) get_value() && { return (std::move(*value)); }
     constexpr operator bool() const noexcept { return bool(value); }
     constexpr bool good() const noexcept { return bool(value); }
 };
