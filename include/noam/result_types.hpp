@@ -61,6 +61,33 @@ struct result<Value>
     using state_base::operator bool;
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
+
+    result& operator=(result const&) = default;
+    result& operator=(result&&) = default;
+
+    /**
+     * @brief Provides an assignment operator for Result types other than the
+     * current result
+     *
+     * @tparam Result
+     * @param r
+     * @return constexpr result&
+     */
+    template <class Result>
+    requires other_than<Result, result&>
+    constexpr result& operator=(Result&& r) {
+        if constexpr (result_always_good_v<Result>) {
+            return operator=
+                (result {r.get_state(), std::forward<Result>(r).get_value()});
+        } else {
+            if (r) {
+                return operator=(result {
+                    r.get_state(), std::forward<Result>(r).get_value()});
+            } else {
+                return operator=(result {});
+            }
+        }
+    }
 };
 template <class Value>
 result(state, Value) -> result<Value>;
