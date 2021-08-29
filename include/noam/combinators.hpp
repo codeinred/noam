@@ -109,6 +109,112 @@ constexpr auto either(Parser&& p) {
     }
 }
 
+template <class Value, class PA, class PB>
+constexpr auto either(PA&& pa, PB&& pb) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+template <class Value, class PA, class PB, class PC>
+constexpr auto either(PA&& pa, PB&& pb, PC&& pc) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB> // <br>
+                       || parser_always_good_v<PC>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb),
+         pc = std::forward<PC>(pc)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pc.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+template <class Value, class PA, class PB, class PC, class PD>
+constexpr auto either(PA&& pa, PB&& pb, PC&& pc, PD&& pd) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB> // <br>
+                       || parser_always_good_v<PC> // <br>
+                       || parser_always_good_v<PD>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb),
+         pc = std::forward<PC>(pc),
+         pd = std::forward<PD>(pd)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pc.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pd.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+/**
+ * @brief Creates a backtracking parser that will test each parser in sequence
+ *
+ * @tparam P the types of the parsers to test
+ * @param parsers the parsers to test
+ * @return parser A parser that will test each input in sequence, returning the
+ * first successful result
+ */
+template <class Value, class... P>
+constexpr auto either(P&&... parsers) {
+    constexpr bool always_good = (parser_always_good_v<P> || ...);
+    using result_t = get_result_t<Value, always_good>;
+    return parser {[... p = std::forward<P>(parsers)](state_t st) -> result_t {
+        // Non-default-constructible values are boxed so that they're
+        // default-constructible.
+        box_if_necessary_t<Value> val;
+        if constexpr (always_good) {
+            (parse_assign_value(st, p, val) || ...);
+            return {st, std::move(val)};
+        } else {
+            if ((parse_assign_value(st, p, val) || ...))
+                return {st, std::move(val)};
+            else
+                return {};
+        }
+    }};
+}
+
+template <class... P>
+constexpr auto either(P&&... parsers) {
+    using Value = std::common_type_t<parser_value_t<P>...>;
+    return either<Value>(std::forward<P>(parsers)...);
+}
+
 /**
  * @brief Parses a value surrounded by a prefix given by Parser `pre` and a
  * postfix given by Parser `post`.
