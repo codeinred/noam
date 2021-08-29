@@ -29,9 +29,9 @@ template <class Value>
 struct basic_result_value {
     using value_type = Value;
     [[no_unique_address]] Value value = Value();
-    constexpr decltype(auto) get_value() & { return value; }
-    constexpr decltype(auto) get_value() const& { return value; }
-    constexpr decltype(auto) get_value() && { return std::move(*this).value; }
+    constexpr decltype(auto) get_value() & { return (value); }
+    constexpr decltype(auto) get_value() const& { return (value); }
+    constexpr decltype(auto) get_value() && { return (std::move(*this).value); }
 };
 template <class Value>
 struct optional_result_value {
