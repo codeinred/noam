@@ -16,8 +16,10 @@ namespace noam {
  * @return true if the parser succeeded
  * @return false if the parser failed
  */
-template <class P, class Result>
-constexpr bool parse_assign(state_t& st, P const& parser, Result& r) {
+template <class P, parse_result Result>
+requires std::assignable_from<Result, parser_result_t<P>>
+constexpr bool parse_assign(state_t& st, P const& parser, Result& r) // <br>
+    noexcept(noexcept(r = parser.parse(st))) {
     if constexpr (parser_always_good_v<P>(parser)) {
         r = parser.parse(st);
         st = r.get_state();
