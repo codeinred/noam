@@ -12,6 +12,15 @@ template <class T>
 concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
 
 /**
+ * @brief Represents any type other than *Except*
+ *
+ * @tparam T the type to test
+ * @tparam Except the types to exclude
+ */
+template <class T, class... Except>
+concept other_than = !(std::is_same_v<T, Except> || ...);
+
+/**
  * @brief A concept that matches any result type. Result types must have a
  * good() function, a get_value() function, and a get_state() function.
  *
