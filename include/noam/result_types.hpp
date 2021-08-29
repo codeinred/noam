@@ -22,8 +22,18 @@ struct result
 
     result& operator=(result const&) = default;
     result& operator=(result&&) = default;
+
+    /**
+     * @brief Provides an assignment operator for Result types other than the
+     * current result
+     *
+     * @tparam Result
+     * @param r
+     * @return constexpr result&
+     */
     template <class Result>
-    constexpr result& operator=(Result&& r) requires(!std::is_same_v<Result, result&>) {
+    requires other_than<Result, result&>
+    constexpr result& operator=(Result&& r) {
         if constexpr (result_always_good_v<Result>) {
             return operator=
                 (result {r.get_state(), std::forward<Result>(r).get_value()});
@@ -62,7 +72,8 @@ result(state, std::reference_wrapper<Value>) -> result<Value&>;
  */
 struct null_result_t {
     template <class T>
-    constexpr operator result<T>() const noexcept(noexcept(result<T>())) {
+    constexpr operator result<T>() const // <br>
+        noexcept(noexcept(result<T>())) {
         return result<T>();
     }
 };
