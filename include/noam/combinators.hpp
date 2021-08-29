@@ -75,6 +75,39 @@ template <class Value>
 constexpr auto either() {
     return parser {[](state_t st) -> result<Value> { return {}; }};
 }
+/**
+ * @brief Trivial case for `either`. If the value produced by `Parser` is the
+ * same as `Value`, then simply returns `p`. Otherwise, returns a parser that
+ * creates a pure_result<Value> if p is always good, or a result<Value> if p
+ * sometimes fails.
+ *
+ * @tparam Value
+ * @tparam Parser
+ * @param p
+ * @return constexpr auto
+ */
+template <class Value, class Parser>
+constexpr auto either(Parser&& p) {
+    using value_t = parser_value_t<Parser>;
+    if constexpr (std::is_same_v<Value, value_t>) {
+        return std::forward<Parser>(p);
+    } else {
+        return parser {[p = std::forward<Parser>(p)](state_t st) {
+            if constexpr (parser_always_good_v<Parser>) {
+                auto r = p.parse(st);
+                return pure_result<Value> {
+                    r.get_state(), std::move(r).get_value()};
+            } else {
+                if (auto r = p.parse(st)) {
+                    return result<Value> {
+                        r.get_state(), std::move(r).get_value()};
+                } else {
+                    return result<Value> {};
+                }
+            }
+        }};
+    }
+}
 
 /**
  * @brief Parses a value surrounded by a prefix given by Parser `pre` and a
