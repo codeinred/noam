@@ -216,6 +216,16 @@ struct state {
     constexpr void set_state(state other) noexcept {
         *this = other;
     }
+    /**
+     * @brief Get a reference to the state object. Result types deriving from
+     * state can expose this method if they wish their state to be mutated
+     * by some other operation, e.g. by noam::parse_assign
+     *
+     * @return constexpr state&
+     */
+    constexpr state& ref_state() noexcept {
+        return *this;
+    }
 };
 using state_t = state;
 constexpr state empty_state {};
