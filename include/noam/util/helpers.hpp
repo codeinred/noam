@@ -33,4 +33,36 @@ constexpr bool parse_assign(state_t& st, P const& parser, Result& r) // <br>
         }
     }
 }
+
+/**
+ * @brief Attempts to apply a parser `p`, assigning the value to `v` and
+ * updating the state on success.
+ *
+ * @tparam P the type of the parser being passed to parse_asign
+ * @tparam Result the type of the result that will be assigned the output of
+ * parser.parse(st)
+ * @param st the state
+ * @param parser the parser to apply to the state
+ * @param r the result which will be assigned the output of parser.parse(st)
+ * @return true if the parser succeeded
+ * @return false if the parser failed
+ */
+template <class P, std::assignable_from<parser_value_t<P>> Value>
+constexpr bool parse_assign_value(state_t& st, P const& p, Value& v) // <br>
+    noexcept(noexcept(p.parse(st).get_value())) {
+    if constexpr (parser_always_good_v<P>(p)) {
+        auto r = p.parse(st);
+        st = r.get_state();
+        v = std::move(r).get_value();
+        return true;
+    } else {
+        if (auto r = p.parse(st)) {
+            st = r.get_state();
+            v = std::move(r).get_value();
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
 } // namespace noam
