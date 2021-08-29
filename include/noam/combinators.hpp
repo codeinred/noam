@@ -65,16 +65,15 @@ constexpr auto map(Func&& func, Parser&& parser) {
 }
 
 /**
- * @brief Creates a backtracking parser that will test each parser in sequence
+ * @brief base-case for either. Produces a parser that always fails. Idk why
+ * you'd need this, but base cases are nice sometimes.
  *
- * @tparam Parsers the types of the parsers to test
- * @param parsers the parsers to test
- * @return parser A parser that will test each input in sequence, returning the
- * first successful result
+ * @tparam Value
+ * @return constexpr auto
  */
-template <class... Parsers>
-constexpr auto either(Parsers&&... parsers) {
-    return parser {parsef::either {std::forward<Parsers>(parsers)...}};
+template <class Value>
+constexpr auto either() {
+    return parser {[](state_t st) -> result<Value> { return {}; }};
 }
 
 /**
