@@ -14,8 +14,8 @@ struct result
     using value_type = Value;
     using state_base = state_t;
     using state_base::get_state;
-    using state_base::set_state;
     using state_base::ref_state;
+    using state_base::set_state;
     using value_base = optional_result_value<Value>;
     using value_base::get_value;
     using value_base::good;
@@ -56,8 +56,8 @@ struct result<Value>
     using state_base = state_t;
     using state_base::get_state;
     using state_base::good;
-    using state_base::set_state;
     using state_base::ref_state;
+    using state_base::set_state;
     using state_base::operator bool;
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
@@ -115,8 +115,8 @@ struct pure_result
     using value_type = Value;
     using state_base = state_t;
     using state_base::get_state;
-    using state_base::set_state;
     using state_base::ref_state;
+    using state_base::set_state;
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
     constexpr operator bool() const noexcept { return true; }
@@ -208,4 +208,14 @@ using default_constructible_parser_result_t = std::conditional_t<
     parser_result_t<Parser>,
     result<parser_value_t<Parser>>>;
 
+/**
+ * @brief If `good` is true, returns `pure_result<Value>`, otherwise returns
+ * `result<Value>`
+ *
+ * @tparam Value
+ * @tparam good
+ */
+template <class Value, bool good>
+using get_result_t =
+    std::conditional_t<good, pure_result<Value>, result<Value>>;
 } // namespace noam
