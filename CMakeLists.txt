@@ -83,6 +83,7 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/
         message("Adding ${executable_name} from src/")
         add_executable("${executable_name}" "${file_name}")
         target_link_libraries("${executable_name}" PRIVATE ${libname})
+        target_link_libraries("${executable_name}" PRIVATE fmt)
         target_link_libraries("${executable_name}" PRIVATE Threads::Threads)
     endforeach()
 endif()
