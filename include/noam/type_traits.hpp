@@ -138,4 +138,18 @@ concept always_good_parser =
     any_parser<Parser> && requires(Parser parser, state_t state) {
     { parser.parse(state) } -> always_good_result;
 };
+
+/**
+ * @brief Guarantees that an assignment is a valid operation, but makes no
+ * assumptions about the return value of such an expression. This is used to
+ * allow classes to inherit the assignment operator from a base class, so it
+ * "just works"
+ *
+ * @tparam A
+ * @tparam B
+ */
+template <class A, class B>
+concept weakly_assignable_from = requires(A& a, B b) {
+    { a = b };
+};
 } // namespace noam
