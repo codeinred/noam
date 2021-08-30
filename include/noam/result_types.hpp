@@ -5,7 +5,10 @@
 #include <utility>
 
 namespace noam {
-struct empty {};
+struct empty {
+    bool operator==(empty const&) const = default;
+    std::strong_ordering operator<=>(empty const&) const = default;
+};
 
 template <class Value>
 struct result
@@ -46,6 +49,9 @@ struct result
                 return operator=(result {});
             }
         }
+    }
+    constexpr bool check_value(Value const& v) const {
+        return good() && get_value() == v;
     }
 };
 template <default_constructible Value>
@@ -88,6 +94,9 @@ struct result<Value>
             }
         }
     }
+    constexpr bool check_value(Value const& v) const {
+        return good() && get_value() == v;
+    }
 };
 template <class Value>
 result(state, Value) -> result<Value>;
@@ -123,6 +132,9 @@ struct pure_result
     constexpr bool good() const noexcept { return true; }
     constexpr operator result<value_type>() const noexcept {
         return {get_state(), get_value()};
+    }
+    constexpr bool check_value(Value const& v) const {
+        return good() && get_value() == v;
     }
 };
 template <class Value>
