@@ -1,61 +1,138 @@
 # Requirements
 cmake_minimum_required(VERSION 3.14)
 
-# Get the project name as the name of the current source directory
-# Feel free to change this if your project has a different name
+################################
+## Section 1: Declare project ##
+################################
 set(project_name noam)
-
-project(${project_name} CXX)
 set(libname "${project_name}")
-set(working_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+project(${project_name} CXX)
 
-# Use pthreads, if availible
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+###########################################################
+## Section 2: Defaults, Definitions and helper functions ##
+###########################################################
 
 # We want to export compile commands b/c it's useful for ccls
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Enable threads in project
-find_package(Threads REQUIRED)
+if(NOT WIN32)
+  string(ASCII 27 Esc)
+  set(ColorReset  "${Esc}[m")
+  set(ColorBold   "${Esc}[1m")
+  set(Red         "${Esc}[31m")
+  set(Green       "${Esc}[32m")
+  set(Yellow      "${Esc}[33m")
+  set(Blue        "${Esc}[34m")
+  set(Magenta     "${Esc}[35m")
+  set(Cyan        "${Esc}[36m")
+  set(White       "${Esc}[37m")
+  set(BoldRed     "${Esc}[1;31m")
+  set(BoldGreen   "${Esc}[1;32m")
+  set(BoldYellow  "${Esc}[1;33m")
+  set(BoldBlue    "${Esc}[1;34m")
+  set(BoldMagenta "${Esc}[1;35m")
+  set(BoldCyan    "${Esc}[1;36m")
+  set(BoldWhite   "${Esc}[1;37m")
+endif()
 
-message("Building project ${project_name}")
+# Define a function 'note' that prints a message in bold cyan
+function(note msg)
+    message("🐈 ${BoldCyan}says: ${msg}${ColorReset}")
+endfunction()
+
+function(find_or_fetch package repo tag)
+    find_package(${package} QUIET)
+    if (NOT ${${package}_FOUND})
+        note("Fetching dependency '${package}' from ${repo}")
+        include(FetchContent)
+        FetchContent_Declare(
+            "${package}"
+            GIT_REPOSITORY "${repo}"
+            GIT_TAG "${tag}"
+        )
+        FetchContent_MakeAvailable(${package})
+    else()
+        note("Using system cmake package for dependency '${package}'")
+    endif()
+endfunction()
+
+function(add_source_dir dir)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    file(GLOB all_targets "${dir}/*.cpp")
+        foreach(filename ${all_targets})
+            get_filename_component(target ${filename} NAME_WLE)
+            note("Adding '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
+            add_executable("${target}" "${filename}")
+            target_link_libraries("${target}" PRIVATE ${ARGN})
+        endforeach()
+    else()
+        note("add_source_dir: Skipping ${dir}. Directory not found.")
+    endif()
+endfunction()
+
+function(add_test_dir dir)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    file(GLOB all_targets "${dir}/*.cpp")
+        foreach(filename ${all_targets})
+            get_filename_component(target ${filename} NAME_WLE)
+            note("Adding test '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
+            add_executable("${target}" "${filename}")
+            target_link_libraries("${target}" PRIVATE ${ARGN})
+            add_test(NAME "${target}" COMMAND "${target}")
+        endforeach()
+    else()
+        note("add_test_dir: Skipping ${dir}. Directory not found.")
+    endif()
+endfunction()
+
+if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
+    set(PROJECT_IS_TOP_LEVEL (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}))
+endif()
+
+function(target_cpp_20 target_name)
+    target_compile_features(${target_name} INTERFACE cxx_std_20)
+
+    # The /EHa flag enables standard C++ stack unwinding
+    # See: https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-160
+    if (MSVC)
+        target_compile_options(${target_name} INTERFACE "/EHa")
+    endif()
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # This definition is needed b/c the <coroutines> header needs it in order
+        # to work on clang
+        target_compile_definitions(${target_name} INTERFACE __cpp_impl_coroutine=1)
+    endif()
+
+    # Enables GCC support for coroutines (these are standard C++ now but GCC still
+    # requires a flag for them)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target_name} INTERFACE "-fcoroutines")
+    endif()
+endfunction()
+
+# Use pthreads, if availible
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+###################################
+## Section 3: Project CMake code ##
+###################################
 
 # Add library and register compile options
 add_library(${libname} INTERFACE)
-target_compile_features(${libname} INTERFACE cxx_std_20)
 
-# The /EHa flag enables standard C++ stack unwinding
-# See: https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-160
-if (MSVC)
-    target_compile_options(${libname} INTERFACE "/EHa")
-endif()
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # This definition is needed b/c the <coroutines> header needs it in order
-    # to work on clang
-    target_compile_definitions(${libname} INTERFACE __cpp_impl_coroutine=1)
-endif()
-
-# Enables GCC support for coroutines (these are standard C++ now but GCC still
-# requires a flag for them)
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(${libname} INTERFACE "-fcoroutines")
-endif()
-
+target_cpp_20(${libname})
 
 # Add every directory in the modules/ folder as a subdirectory
-if(EXISTS "${working_dir}/modules/")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/modules")
     file(GLOB all_modules "modules/*")
     foreach(module_dir ${all_modules})
         get_filename_component(module ${module_dir} NAME)
-        message("Adding ${module} @ modules/${module}")
+        note("Linked ${module} @ modules/${module}")
         add_subdirectory("modules/${module}")
         target_link_libraries(${libname} INTERFACE ${module})
     endforeach()
 endif()
-
-
-# target_compile_definitions(${libname} INTERFACE)
 
 target_include_directories(
     ${libname}
@@ -64,81 +141,19 @@ target_include_directories(
     $<INSTALL_INTERFACE:include>
 )
 
-# Provides install target, so users can install the library on their system
-# if they like
-
 install(
     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION include
 )
 
-# If we're building this project, and not something that has this project as a dependency
-# Then we want to build files in the src directory. This will build every top-level
-# file in the src directory as a separate program
-if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/src"))
-    file(GLOB all_executables "src/*.cpp")
-
-    foreach(file_name ${all_executables})
-        get_filename_component(executable_name ${file_name} NAME_WLE)
-        message("Adding ${executable_name} from src/")
-        add_executable("${executable_name}" "${file_name}")
-        target_link_libraries("${executable_name}" PRIVATE ${libname})
-        target_link_libraries("${executable_name}" PRIVATE fmt)
-        target_link_libraries("${executable_name}" PRIVATE Threads::Threads)
-    endforeach()
-endif()
-
-# If we're building this project, and not something that has this project as a dependency
-# Then we want to build files in the src directory. This will build every top-level
-# file in the src directory as a separate program
-if((${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND (EXISTS "${working_dir}/bench"))
-    find_package(benchmark QUIET)
-    if(NOT ${benchmark_FOUND})
-        include(FetchContent)
-        # list(APPEND CMAKE_ARGS "-DBENCHMARK_ENABLE_GTEST_TESTS=OFF")
-
-        FetchContent_Declare(
-            benchmark
-            GIT_REPOSITORY https://github.com/google/benchmark.git
-            GIT_TAG main
-        )
-        set(BENCHMARK_ENABLE_TESTING OFF)
-        FetchContent_MakeAvailable(benchmark)
-    endif()
-
-    file(GLOB all_executables "bench/*.cpp")
-
-    foreach(file_name ${all_executables})
-        get_filename_component(executable_name ${file_name} NAME_WLE)
-        message("Adding ${executable_name} from bench/")
-        add_executable("${executable_name}" "${file_name}")
-        target_compile_options("${executable_name}" PRIVATE "-march=native")
-        target_link_libraries("${executable_name}" PRIVATE benchmark)
-        target_link_libraries("${executable_name}" PRIVATE ${libname})
-        target_link_libraries("${executable_name}" PRIVATE Threads::Threads)
-    endforeach()
-endif()
-
-# Build every file in the test/ directory as a separate program and register
-# it as a test
-if((EXISTS "${working_dir}/test/") AND (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}) AND BUILD_TESTING)
+if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
-    include(FetchContent)
-    FetchContent_Declare(
-        fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    )
-    FetchContent_MakeAvailable(fmt)
 
-    file(GLOB all_tests "test/*.cpp")
+    set(BENCHMARK_ENABLE_TESTING OFF)
+    find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
+    find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
 
-    foreach(file_name ${all_tests})
-        get_filename_component(test_name ${file_name} NAME_WLE)
-        add_executable("${test_name}" "${file_name}")
-        target_link_libraries("${test_name}" PRIVATE ${libname})
-        target_link_libraries("${test_name}" PRIVATE fmt)
-        target_link_libraries("${test_name}" PRIVATE Threads::Threads)
-        add_test(NAME "${test_name}" COMMAND "${test_name}")
-        message("[test: ${test_name}]")
-    endforeach()
+    add_source_dir(src ${libname} fmt)
+    add_source_dir(bench ${libname} benchmark)
+    add_test_dir(test ${libname} fmt)
 endif()
