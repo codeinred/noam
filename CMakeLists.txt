@@ -15,6 +15,8 @@ project(${project_name} CXX)
 # We want to export compile commands b/c it's useful for ccls
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Defines some useful constants representing terminal codes to print things
+# in color.
 if(NOT WIN32)
   string(ASCII 27 Esc)
   set(ColorReset  "${Esc}[m")
@@ -40,6 +42,9 @@ function(note msg)
     message("🐈 ${BoldCyan}says: ${msg}${ColorReset}")
 endfunction()
 
+# find_or_fetch will search for a system installation of ${package} via
+# find_package. If it fails to find one, it'll use FetchContent to download and
+# build it locally.
 function(find_or_fetch package repo tag)
     find_package(${package} QUIET)
     if (NOT ${${package}_FOUND})
@@ -56,9 +61,12 @@ function(find_or_fetch package repo tag)
     endif()
 endfunction()
 
+# Adds every top-level .cpp file in the given directory as an executable. Arguments
+# provided after the directory name are interpreted as libraries, and it'll link
+# targets in that directory against those libraries.
 function(add_source_dir dir)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
-    file(GLOB all_targets "${dir}/*.cpp")
+        file(GLOB all_targets "${dir}/*.cpp")
         foreach(filename ${all_targets})
             get_filename_component(target ${filename} NAME_WLE)
             note("Adding '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
@@ -70,9 +78,14 @@ function(add_source_dir dir)
     endif()
 endfunction()
 
+# Adds every top-level .cpp file in the given directory as an executable. Arguments
+# provided after the directory name are interpreted as libraries, and it'll link
+# targets in that directory against those libraries. Each target will also be
+# registered as a test via CTest
 function(add_test_dir dir)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
-    file(GLOB all_targets "${dir}/*.cpp")
+        include(CTest)
+        file(GLOB all_targets "${dir}/*.cpp")
         foreach(filename ${all_targets})
             get_filename_component(target ${filename} NAME_WLE)
             note("Adding test '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
@@ -85,10 +98,15 @@ function(add_test_dir dir)
     endif()
 endfunction()
 
+# PROJECT_IS_TOP_LEVEL is a variable added in CMake 3.21 that checks if the
+# current project is the top-level project. This checks if it's been defined,
+# and if not, it defines it.
 if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
     set(PROJECT_IS_TOP_LEVEL (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}))
 endif()
 
+# Targets C++20 for a given target. also adds additional compiler options
+# in order to ensure greater levels of compatibility.
 function(target_cpp_20 target_name)
     target_compile_features(${target_name} INTERFACE cxx_std_20)
 
@@ -147,8 +165,6 @@ install(
 )
 
 if(PROJECT_IS_TOP_LEVEL)
-    include(CTest)
-
     set(BENCHMARK_ENABLE_TESTING OFF)
     find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
     find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
