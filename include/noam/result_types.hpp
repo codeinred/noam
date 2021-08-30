@@ -1,6 +1,6 @@
 #pragma once
+#include <noam/type_traits.hpp>
 #include <noam/util/value_wrappers.hpp>
-#include <noam/concepts.hpp>
 #include <optional>
 #include <utility>
 
@@ -14,11 +14,39 @@ struct result
     using value_type = Value;
     using state_base = state_t;
     using state_base::get_state;
+    using state_base::ref_state;
     using state_base::set_state;
     using value_base = optional_result_value<Value>;
     using value_base::get_value;
     using value_base::good;
     using value_base::operator bool;
+
+    result& operator=(result const&) = default;
+    result& operator=(result&&) = default;
+
+    /**
+     * @brief Provides an assignment operator for Result types other than the
+     * current result
+     *
+     * @tparam Result
+     * @param r
+     * @return constexpr result&
+     */
+    template <class Result>
+    requires other_than<Result, result&>
+    constexpr result& operator=(Result&& r) {
+        if constexpr (result_always_good_v<Result>) {
+            return operator=
+                (result {r.get_state(), std::forward<Result>(r).get_value()});
+        } else {
+            if (r) {
+                return operator=(result {
+                    r.get_state(), std::forward<Result>(r).get_value()});
+            } else {
+                return operator=(result {});
+            }
+        }
+    }
 };
 template <default_constructible Value>
 struct result<Value>
@@ -28,15 +56,57 @@ struct result<Value>
     using state_base = state_t;
     using state_base::get_state;
     using state_base::good;
+    using state_base::ref_state;
     using state_base::set_state;
     using state_base::operator bool;
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
+
+    result& operator=(result const&) = default;
+    result& operator=(result&&) = default;
+
+    /**
+     * @brief Provides an assignment operator for Result types other than the
+     * current result
+     *
+     * @tparam Result
+     * @param r
+     * @return constexpr result&
+     */
+    template <class Result>
+    requires other_than<Result, result&>
+    constexpr result& operator=(Result&& r) {
+        if constexpr (result_always_good_v<Result>) {
+            return operator=
+                (result {r.get_state(), std::forward<Result>(r).get_value()});
+        } else {
+            if (r) {
+                return operator=(result {
+                    r.get_state(), std::forward<Result>(r).get_value()});
+            } else {
+                return operator=(result {});
+            }
+        }
+    }
 };
 template <class Value>
 result(state, Value) -> result<Value>;
 template <class Value>
 result(state, std::reference_wrapper<Value>) -> result<Value&>;
+
+/**
+ * @brief Represents a type that is implicitly convertible to any result<T>,
+ * resulting in a default-constructed result<T> representing a failed result.
+ *
+ */
+struct null_result_t {
+    template <class T>
+    constexpr operator result<T>() const // <br>
+        noexcept(noexcept(result<T>())) {
+        return result<T>();
+    }
+};
+constexpr null_result_t null_result;
 
 template <class Value>
 struct pure_result
@@ -45,6 +115,7 @@ struct pure_result
     using value_type = Value;
     using state_base = state_t;
     using state_base::get_state;
+    using state_base::ref_state;
     using state_base::set_state;
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
@@ -123,4 +194,28 @@ template <class Value>
 struct result_traits<optional_result<Value>> {
     constexpr static bool always_good = true;
 };
+
+/**
+ * @brief If the result type of Parser is default_constructible, obtains that
+ * type, otherwise returns result<parser_value_t<Parser>>, which should always
+ * be default constructible
+ *
+ * @tparam Parser the parser to obtain a result type for
+ */
+template <class Parser>
+using default_constructible_parser_result_t = std::conditional_t<
+    std::is_default_constructible_v<parser_result_t<Parser>>,
+    parser_result_t<Parser>,
+    result<parser_value_t<Parser>>>;
+
+/**
+ * @brief If `good` is true, returns `pure_result<Value>`, otherwise returns
+ * `result<Value>`
+ *
+ * @tparam Value
+ * @tparam good
+ */
+template <class Value, bool good>
+using get_result_t =
+    std::conditional_t<good, pure_result<Value>, result<Value>>;
 } // namespace noam

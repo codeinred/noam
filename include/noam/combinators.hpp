@@ -1,163 +1,11 @@
 #pragma once
-#include <noam/concepts.hpp>
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/type_traits.hpp>
+#include <noam/util/parsef.hpp>
+#include <vector>
 
-// This file holds functios that return parsers based on inputs
-
-/**
- * @brief noam::parsef contains the definitions of parser functors. These
- * represent the implementation of various combinators
- *
- */
-namespace noam::parsef {
-template <class Value>
-struct pure {
-    [[no_unique_address]] Value value {};
-    constexpr auto operator()(state_t state) const
-        noexcept(noexcept(noam::pure_result<Value> {state, value})) {
-        return noam::pure_result<Value> {state, value};
-    }
-};
-template <class Value>
-pure(Value) -> pure<Value>;
-
-/**
- * @brief Implements a functor that will compare a series of parsers
- *
- * @tparam Parsers The parsers to apply either over
- */
-template <class... Parsers>
-struct either;
-template <>
-struct either<> {
-    /**
-     * @brief An empty either always returns a bad result
-     *
-     * @return result<empty> an empty result type representing a bad result
-     */
-    constexpr auto operator()(state_t) const noexcept {
-        return result<empty> {};
-    }
-};
-template <class Parser>
-struct either<Parser> {
-    Parser parser;
-    using value_type = parser_value_t<Parser>;
-    using result_type = parser_result_t<Parser>;
-    constexpr auto operator()(state_t st) const
-        noexcept(noexcept(parser.parse(st))) {
-        return parser.parse(st);
-    }
-};
-template <class PA, class PB>
-struct either<PA, PB> {
-    using resultA = parser_result_t<PA>;
-    using resultB = parser_result_t<PB>;
-    PA parserA;
-    PB parserB;
-    constexpr static bool always_good =
-        result_always_good_v<resultA> || result_always_good_v<resultB>;
-    using value_type =
-        std::common_type_t<result_value_t<resultA>, result_value_t<resultB>>;
-    using result_type = std::
-        conditional_t<always_good, pure_result<value_type>, result<value_type>>;
-    constexpr auto operator()(state_t st) const noexcept(
-        noexcept(value_type(parserA.parse(st).get_value())) && noexcept(
-            value_type(parserB.parse(st).get_value()))) -> result_type {
-        if (auto res = parserA.parse(st)) {
-            return {res.get_state(), std::move(res).get_value()};
-        }
-        if constexpr (std::constructible_from<result_type, resultB&&>) {
-            return result_type(parserB.parse(st));
-        } else {
-            if (auto res = parserB.parse(st)) {
-                return {res.get_state(), std::move(res).get_value()};
-            } else {
-                return {};
-            }
-        }
-    }
-};
-template <class PA, class... PB>
-struct either<PA, PB...> {
-    PA first;
-    either<PB...> rest;
-    using resultA = noam::parser_result_t<PA>;
-    using resultB = typename either<PB...>::result_type;
-    constexpr static bool always_good =
-        result_always_good_v<resultA> || result_always_good_v<resultB>;
-    using value_type =
-        std::common_type_t<result_value_t<resultA>, result_value_t<resultB>>;
-    using result_type = std::
-        conditional_t<always_good, pure_result<value_type>, result<value_type>>;
-    constexpr auto operator()(state_t st) const -> result_type {
-        if (auto res = first.parse(st)) {
-            if constexpr (std::constructible_from<result_type, resultA&&>) {
-                return result_type(std::move(res));
-            } else {
-                return {res.get_state(), std::move(res).get_value()};
-            }
-        }
-        if constexpr (std::constructible_from<result_type, resultB&&>) {
-            return result_type(rest(st));
-        } else {
-            if (auto res = rest(st)) {
-                return {res.get_state(), std::move(res).get_value()};
-            } else {
-                return {};
-            }
-        }
-    }
-};
-template <class... Parser>
-either(Parser...) -> either<Parser...>;
-
-template <class Func, class Parser>
-struct map {
-    [[no_unique_address]] Func func;
-    [[no_unique_address]] Parser parser;
-    using result_before_map = parser_result_t<Parser>;
-    constexpr static bool always_good = result_always_good_v<result_before_map>;
-    using value_type = std::invoke_result_t<Func, parser_value_t<Parser>>;
-    constexpr auto operator()(state_t st) const {
-        if constexpr (always_good) {
-            auto result = parser.parse(st);
-            return pure_result<value_type> {
-                result.get_state(), func(std::move(result).get_value())};
-        } else {
-            if (auto result = parser.parse(st)) {
-                return noam::result<value_type> {
-                    result.get_state(), func(std::move(result).get_value())};
-            } else {
-                return noam::result<value_type> {};
-            }
-        }
-    }
-};
-
-template <class Prefix, class Value, class Postfix>
-struct surround {
-    [[no_unique_address]] Prefix prefix {};
-    [[no_unique_address]] Value parser {};
-    [[no_unique_address]] Postfix postfix {};
-    constexpr auto operator()(state_t st) const {
-        using value_type = parser_value_t<Value>;
-        if (auto pre = prefix.parse(st)) {
-            if (auto value = parser.parse(pre.get_state())) {
-                if (auto post = prefix.parse(value.get_state())) {
-                    return noam::result<value_type> {
-                        post.get_state(), std::move(value).get_value()};
-                }
-            }
-        }
-        return noam::result<value_type> {};
-    }
-};
-template <class A, class B, class C>
-surround(A, B, C) -> surround<A, B, C>;
-} // namespace noam::parsef
 namespace noam {
 template <class Value>
 using pure_parser = parser<parsef::pure<Value>>;
@@ -217,16 +65,154 @@ constexpr auto map(Func&& func, Parser&& parser) {
 }
 
 /**
+ * @brief base-case for either. Produces a parser that always fails. Idk why
+ * you'd need this, but base cases are nice sometimes.
+ *
+ * @tparam Value
+ * @return constexpr auto
+ */
+template <class Value>
+constexpr auto either() {
+    return parser {[](state_t st) -> result<Value> { return {}; }};
+}
+/**
+ * @brief Trivial case for `either`. If the value produced by `Parser` is the
+ * same as `Value`, then simply returns `p`. Otherwise, returns a parser that
+ * creates a pure_result<Value> if p is always good, or a result<Value> if p
+ * sometimes fails.
+ *
+ * @tparam Value
+ * @tparam Parser
+ * @param p
+ * @return constexpr auto
+ */
+template <class Value, class Parser>
+constexpr auto either(Parser&& p) {
+    using value_t = parser_value_t<Parser>;
+    if constexpr (std::is_same_v<Value, value_t>) {
+        return std::forward<Parser>(p);
+    } else {
+        return parser {[p = std::forward<Parser>(p)](state_t st) {
+            if constexpr (parser_always_good_v<Parser>) {
+                auto r = p.parse(st);
+                return pure_result<Value> {
+                    r.get_state(), std::move(r).get_value()};
+            } else {
+                if (auto r = p.parse(st)) {
+                    return result<Value> {
+                        r.get_state(), std::move(r).get_value()};
+                } else {
+                    return result<Value> {};
+                }
+            }
+        }};
+    }
+}
+
+template <class Value, class PA, class PB>
+constexpr auto either(PA&& pa, PB&& pb) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+template <class Value, class PA, class PB, class PC>
+constexpr auto either(PA&& pa, PB&& pb, PC&& pc) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB> // <br>
+                       || parser_always_good_v<PC>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb),
+         pc = std::forward<PC>(pc)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pc.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+template <class Value, class PA, class PB, class PC, class PD>
+constexpr auto either(PA&& pa, PB&& pb, PC&& pc, PD&& pd) {
+    constexpr bool good = parser_always_good_v<PA> // <br>
+                       || parser_always_good_v<PB> // <br>
+                       || parser_always_good_v<PC> // <br>
+                       || parser_always_good_v<PD>;
+    using result_t = get_result_t<Value, good>;
+    return parser {
+        [pa = std::forward<PA>(pa),
+         pb = std::forward<PB>(pb),
+         pc = std::forward<PC>(pc),
+         pd = std::forward<PD>(pd)](state_t st) -> result_t {
+            if (auto r = pa.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pb.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pc.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if (auto r = pd.parse(st)) {
+                return {r.get_state(), std::move(r).get_value()};
+            }
+            if constexpr (!good) {
+                return {};
+            }
+        }};
+}
+/**
  * @brief Creates a backtracking parser that will test each parser in sequence
  *
- * @tparam Parsers the types of the parsers to test
+ * @tparam P the types of the parsers to test
  * @param parsers the parsers to test
  * @return parser A parser that will test each input in sequence, returning the
  * first successful result
  */
-template <class... Parsers>
-constexpr auto either(Parsers&&... parsers) {
-    return parser {parsef::either {std::forward<Parsers>(parsers)...}};
+template <class Value, class... P>
+constexpr auto either(P&&... parsers) {
+    constexpr bool always_good = (parser_always_good_v<P> || ...);
+    using result_t = get_result_t<Value, always_good>;
+    return parser {[... p = std::forward<P>(parsers)](state_t st) -> result_t {
+        // Non-default-constructible values are boxed so that they're
+        // default-constructible.
+        box_if_necessary_t<Value> val;
+        if constexpr (always_good) {
+            (parse_assign_value(st, p, val) || ...);
+            return {st, std::move(val)};
+        } else {
+            if ((parse_assign_value(st, p, val) || ...))
+                return {st, std::move(val)};
+            else
+                return {};
+        }
+    }};
+}
+
+template <class... P>
+constexpr auto either(P&&... parsers) {
+    using Value = std::common_type_t<parser_value_t<P>...>;
+    return either<Value>(std::forward<P>(parsers)...);
 }
 
 /**
@@ -444,5 +430,89 @@ constexpr auto try_lookahead(Parser&& parser) {
             result ? std::optional {std::move(result).get_value()}
                    : std::nullopt};
     } / make_parser;
+}
+
+/**
+ * @brief Make combinator. Creates a parser that will construct a object of type
+ * T using arguments obtained by applying parsers p1...pn in succession
+ *
+ * @tparam T
+ * @tparam P
+ * @param parsers
+ * @return auto
+ */
+template <class T, class... P>
+constexpr auto make(P&&... parsers) {
+    return parser {
+        [... parsers = std::forward<P>(parsers)](state_t st) -> result<T> {
+            return [&](auto... results) -> result<T> {
+                if ((parse_assign(st, parsers, results) && ...)) {
+                    return {st, T {std::move(results).get_value()...}};
+                } else {
+                    return {};
+                }
+            }(default_constructible_parser_result_t<P> {}...);
+        }};
+}
+
+/**
+ * @brief Make combinator. Creates a parser that will construct a object whose
+ * type is deduced by invoking T with arguments obtained by applying parsers
+ * p1...pn in succession
+ *
+ * @tparam T
+ * @tparam P
+ * @param parsers
+ * @return auto
+ */
+template <template <class...> class T, class... P>
+constexpr auto make(P&&... parsers) {
+    return parser {[... parsers = std::forward<P>(parsers)](state_t st) {
+        return [&](auto... results) {
+            return (parse_assign(st, parsers, results) && ...)
+                     ? result {st, T {std::move(results).get_value()...}}
+                     : null_result;
+        }(default_constructible_parser_result_t<P> {}...);
+    }};
+}
+
+/**
+ * @brief Parses a sequence of elements, returning the result as a vector
+ *
+ * @tparam ParseElem
+ * @tparam ParseSep
+ * @param elem
+ * @param sep
+ * @return constexpr auto
+ */
+template <class ParseElem, class ParseSep>
+constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
+    constexpr int initial_reserve = 16;
+    using T = parser_value_t<ParseElem>;
+    return parser {
+        [elem = std::forward<ParseElem>(elem),
+         sep = std::forward<ParseSep>(sep)](
+            state_t st) -> pure_result<std::vector<T>> {
+            if (auto first = elem.parse(st)) {
+                // Update the state since we obtained the first value
+                st = first.get_state();
+
+                std::vector<T> value;
+                value.resreve(initial_reserve);
+                value.push_back(std::move(first).get_value());
+                while (auto sep_ = sep.parse(st)) {
+                    if (auto next = elem.parse(sep_.get_state())) {
+                        // Update the state since we obtained the next value
+                        st = next.get_state();
+                        value.push_back(std::move(next).get_value());
+                    } else {
+                        break;
+                    }
+                }
+                return {st, std::move(value)};
+            } else {
+                return {st, std::vector<T>()};
+            }
+        }};
 }
 } // namespace noam
