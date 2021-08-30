@@ -17,10 +17,10 @@ namespace noam {
  * @return false if the parser failed
  */
 template <class P, parse_result Result>
-requires std::assignable_from<Result, parser_result_t<P>>
+requires weakly_assignable_from<Result&, parser_result_t<P>>
 constexpr bool parse_assign(state_t& st, P const& parser, Result& r) // <br>
     noexcept(noexcept(r = parser.parse(st))) {
-    if constexpr (parser_always_good_v<P>(parser)) {
+    if constexpr (parser_always_good_v<P>) {
         r = parser.parse(st);
         st = r.get_state();
         return true;
@@ -47,10 +47,11 @@ constexpr bool parse_assign(state_t& st, P const& parser, Result& r) // <br>
  * @return true if the parser succeeded
  * @return false if the parser failed
  */
-template <class P, std::assignable_from<parser_value_t<P>> Value>
+template <class P, class Value>
+requires weakly_assignable_from<Value&, parser_value_t<P>>
 constexpr bool parse_assign_value(state_t& st, P const& p, Value& v) // <br>
     noexcept(noexcept(p.parse(st).get_value())) {
-    if constexpr (parser_always_good_v<P>(p)) {
+    if constexpr (parser_always_good_v<P>) {
         auto r = p.parse(st);
         st = r.get_state();
         v = std::move(r).get_value();

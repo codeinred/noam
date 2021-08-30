@@ -455,6 +455,10 @@ constexpr auto make(P&&... parsers) {
         }};
 }
 
+template <class T>
+constexpr auto make() {
+    return parser {[](state_t st) { return pure_result<T> {st, T()}; }};
+}
 /**
  * @brief Make combinator. Creates a parser that will construct a object whose
  * type is deduced by invoking T with arguments obtained by applying parsers
@@ -498,7 +502,7 @@ constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
                 st = first.get_state();
 
                 std::vector<T> value;
-                value.resreve(initial_reserve);
+                value.reserve(initial_reserve);
                 value.push_back(std::move(first).get_value());
                 while (auto sep_ = sep.parse(st)) {
                     if (auto next = elem.parse(sep_.get_state())) {

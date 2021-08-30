@@ -4,6 +4,7 @@
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <string>
 
 namespace noam {
 template <class T>
@@ -86,11 +87,17 @@ constexpr parser match_constexpr_prefix = {[](state_t state) -> result<empty> {
         char const* begin = state._begin;
         const char* end = state._end;
         if (((*begin++ == prefix) && ...)) {
-            return {state_t {begin, end}, empty {}};
+            return {state.substr(sizeof...(prefix)), empty {}};
         }
     }
     return {};
 }};
+
+static_assert(match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello").good());
+
+static_assert(match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello ").good());
+
+static_assert(!match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hell ").good());
 
 /**
  * @brief Matches strings starting with the characters `chars...`. E.g,
@@ -177,7 +184,85 @@ constexpr parser parse_line = [](state_t state) {
 
 template <char... separator>
 constexpr parser match_separator =
-    match_spaces >> match_constexpr_prefix<separator...> >> match_spaces;
+    whitespace >> match_constexpr_prefix<separator...> >> whitespace;
 
 constexpr parser match_comma_separator = match_separator<','>;
+
+constexpr parser parse_bool {[](state_t st) -> result<bool> {
+    if (st.starts_with("true")) {
+        return {st.substr(4), true};
+    }
+    if (st.starts_with("false")) {
+        return {st.substr(5), false};
+    }
+    return {};
+}};
+
+constexpr parser parse_string = parser {[](state_t st) -> result<std::string> {
+    if (st.size() >= 2 && st[0] == '"') {
+        std::string str;
+        size_t i = 1;
+        size_t count = st.size() - 1;
+        while (i < count) {
+            char c = st[i];
+            char val = c;
+            if (c == '\\') {
+                char next = st[i + 1];
+                switch (next) {
+                    case 'b': val = '\b'; break;
+                    case 'f': val = '\f'; break;
+                    case 'n': val = '\n'; break;
+                    case 'r': val = '\r'; break;
+                    case 't': val = '\t'; break;
+                    case '\\': val = '\\'; break;
+                    case '"': val = '"'; break;
+                    // The parser fails on an unrecognized escape code
+                    default: return {};
+                }
+                i += 2;
+            } else if (c == '"') {
+                break;
+            } else {
+                val = c;
+                i += 1;
+            }
+            str.push_back(val);
+        }
+        if (st[i] == '"') {
+            return {st.substr(i + 1), std::move(str)};
+        }
+    }
+    return {};
+}};
+
+/**
+ * @brief Parses a section of characters between an opening and closing quote.
+ * The section of characters is returned as a string_view. The string itself is
+ * unmodified: any escaped characters in the string remain escaped.
+ *
+ */
+constexpr parser parse_string_view {[](state_t st) -> result<std::string_view> {
+    if (st.size() >= 2 && st[0] == '"') {
+        for (intptr_t i = 1; i < st.size(); i++) {
+            if (st[i] == '"' && st[i - 1] != '\\') {
+                return {st.substr(i + 1), st.substr(1, i - 1)};
+            }
+        }
+    }
+    return {};
+}};
+
+static_assert(
+    parse_string_view.parse(R"("")").check_value(""),
+    "parse_string_view broken");
+static_assert(
+    parse_string_view.parse(R"("hello")").check_value("hello"),
+    "parse_string_view broken");
+static_assert(
+    parse_string_view.parse(R"("hello" world)").check_value("hello"),
+    "parse_string_view broken");
+static_assert(
+    parse_string_view.parse(R"("hello\" world")").check_value(R"(hello\" world)"),
+    "parse_string_view broken");
+
 } // namespace noam

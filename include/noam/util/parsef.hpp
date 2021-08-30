@@ -57,7 +57,7 @@ struct surround {
         using value_type = parser_value_t<Value>;
         if (auto pre = prefix.parse(st)) {
             if (auto value = parser.parse(pre.get_state())) {
-                if (auto post = prefix.parse(value.get_state())) {
+                if (auto post = postfix.parse(value.get_state())) {
                     return noam::result<value_type> {
                         post.get_state(), std::move(value).get_value()};
                 }

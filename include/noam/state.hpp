@@ -134,10 +134,11 @@ struct state {
     }
     template <size_t N>
     constexpr bool starts_with(char const (&prefix)[N]) const noexcept {
-        if (size() < N) {
+        constexpr int Len = N - 1;
+        if (size() < Len) {
             return false;
         }
-        for (size_t i = 0; i < N; i++) {
+        for (size_t i = 0; i < Len; i++) {
             if (prefix[i] != _begin[i]) {
                 return false;
             }
@@ -234,6 +235,12 @@ constexpr state null_state {};
 constexpr state operator"" _st(const char* ptr, size_t len) noexcept {
     return state(ptr, len);
 }
+
+static_assert("hello"_st.starts_with("hello"), "starts_with broken");
+static_assert("hello"_st.starts_with(""), "starts_with broken");
+static_assert("hello world"_st.starts_with("hello"), "starts_with broken");
+static_assert(!"hell"_st.starts_with("hello"), "starts_with broken");
+static_assert(!"hello"_st.starts_with("helle"), "starts_with broken");
 
 static_assert(
     state("").size() == 0,
