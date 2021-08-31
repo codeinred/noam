@@ -239,10 +239,32 @@ template <class P>
 constexpr auto join(P&& parser) {
     return std::forward<P>(parser);
 }
+/**
+ * @brief Applies a series of parsers in sequence. Returns the value produced
+ * by the last parser in the sequence. Succeeds iff the last parser in the
+ * sequence succeeds.
+ *
+ * @tparam P
+ * @param parsers
+ * @return constexpr auto
+ */
 template <class... P>
 constexpr auto join(P&&... parsers) {
     return parser { parsers::join {std::forward<P>(parsers)...} };
 }
+/**
+ * @brief Applies a series of parsers in sequence. Discards whatever values were
+ * produced. Succeeds iff the sequence succeeded.
+ *
+ * @tparam P
+ * @param parsers
+ * @return constexpr auto
+ */
+template <class... P>
+constexpr auto match(P&&... parsers) {
+    return parser { parsers::match {std::forward<P>(parsers)...} };
+}
+
 /**
  * @brief Takes a parser parser and produces a new parser that generates a true
  * if parser succeeded and false if parser failed
