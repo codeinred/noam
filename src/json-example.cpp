@@ -70,15 +70,16 @@ auto visit(Callable&& c, Variants&&... v) {
 using noam::parser;
 using noam::state_t;
 auto parse_value_impl(state_t st) -> noam::result<json_value>;
-constexpr parser parse_null = (noam::match_constexpr_prefix<'n', 'u', 'l', 'l'>)
-                           >> noam::make<null>();
+constexpr parser parse_null = noam::join(
+    noam::match_constexpr_prefix<'n', 'u', 'l', 'l'>, noam::make<null>());
 constexpr parser parse_value = parser {parse_value_impl};
 constexpr parser parse_array = surround(
     noam::match_separator<'['>,
     sequence(parse_value, noam::match_separator<','>),
     noam::match_separator<']'>);
 constexpr parser parse_member = noam::make<std::pair>(
-    noam::parse_string_view, (noam::match_separator<':'>) >> parse_value);
+    noam::parse_string_view,
+    noam::join(noam::match_separator<':'>, parse_value));
 constexpr parser parse_object = noam::surround(
     noam::match_separator<'{'>,
     noam::sequence(parse_member, noam::match_separator<','>),
@@ -119,7 +120,6 @@ std::string_view input = R"({
     }
 })";
 
-static_assert(noam::match_separator<'['>.parse("   [    ").good());
 int main() {
     constexpr auto int_seq =
         noam::sequence(noam::parse_int, noam::match_separator<','>);
