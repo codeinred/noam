@@ -11,8 +11,15 @@ struct parser {
     // if Func is empty (i.e, [](){}), parser<Func> is too
     [[no_unique_address]] Func parse;
 };
+
+template <any_parser Base>
+struct parser<Base> : Base {
+    using Base::parse;
+};
 template <class Func>
 parser(Func) -> parser<Func>;
+template <class Func>
+parser(parser<Func>) -> parser<Func>;
 
 /**
  * @brief This takes an implementation (such as a function or coroutine) and

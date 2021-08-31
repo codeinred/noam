@@ -10,15 +10,14 @@
 // This file holds functios that return parsers based on inputs
 
 /**
- * @brief noam::parsef contains the definitions of parser functors. These
- * represent the implementation of various combinators
+ * @brief noam::parsers contains the definitions of parser combinators
  *
  */
-namespace noam::parsef {
+namespace noam::parsers {
 template <class Value>
 struct pure {
     [[no_unique_address]] Value value {};
-    constexpr auto operator()(state_t state) const
+    constexpr auto parse(state_t state) const
         noexcept(noexcept(noam::pure_result<Value> {state, value})) {
         return noam::pure_result<Value> {state, value};
     }
@@ -33,7 +32,7 @@ struct map {
     using result_before_map = parser_result_t<Parser>;
     constexpr static bool always_good = result_always_good_v<result_before_map>;
     using value_type = std::invoke_result_t<Func, parser_value_t<Parser>>;
-    constexpr auto operator()(state_t st) const {
+    constexpr auto parse(state_t st) const {
         if constexpr (always_good) {
             auto result = parser.parse(st);
             return pure_result<value_type> {
@@ -54,7 +53,7 @@ struct surround {
     [[no_unique_address]] Prefix prefix {};
     [[no_unique_address]] Value parser {};
     [[no_unique_address]] Postfix postfix {};
-    constexpr auto operator()(state_t st) const {
+    constexpr auto parse(state_t st) const {
         using value_type = parser_value_t<Value>;
         if (auto pre = prefix.parse(st)) {
             if (auto value = parser.parse(pre.get_state())) {
@@ -91,8 +90,8 @@ struct match : tuplet::tuple<Parsers...> {
             }
         }
     }
-    constexpr auto operator()(state_t st) const -> result_type {
-        return parse_impl(st, base_list{});
+    constexpr auto parse(state_t st) const -> result_type {
+        return parse_impl(st, base_list {});
     }
 };
 
@@ -106,11 +105,14 @@ struct join : meta::all_but_last_t<match, P...> {
         result<parser_value_t<last_parser>>>;
     last_parser p;
     template <class... Bases>
-    constexpr auto operator()(state_t st) const -> result_type {
+    constexpr auto parse(state_t st) const -> result_type {
         if constexpr (match_t::always_good) {
-            return p.parse(match_t::parse_impl(st, typename match_t::base_list{}).get_state());
+            return p.parse(
+                match_t::parse_impl(st, typename match_t::base_list {})
+                    .get_state());
         } else {
-            if (auto r = match_t::parse_impl(st, typename match_t::base_list{})) {
+            if (auto r =
+                    match_t::parse_impl(st, typename match_t::base_list {})) {
                 return p.parse(r.get_state());
             } else {
                 return {};
@@ -120,4 +122,4 @@ struct join : meta::all_but_last_t<match, P...> {
 };
 template <class... T>
 join(T...) -> join<T...>;
-} // namespace noam::parsef
+} // namespace noam::parsers

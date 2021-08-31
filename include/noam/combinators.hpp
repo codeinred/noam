@@ -3,12 +3,12 @@
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
 #include <noam/type_traits.hpp>
-#include <noam/util/parsef.hpp>
+#include <noam/util/combinator_types.hpp>
 #include <vector>
 
 namespace noam {
 template <class Value>
-using pure_parser = parser<parsef::pure<Value>>;
+using pure_parser = parser<parsers::pure<Value>>;
 /**
  * @brief Function that takes a value and returns a pure parser that returns
  * that value
@@ -17,7 +17,7 @@ using pure_parser = parser<parsef::pure<Value>>;
  */
 template <class Value>
 constexpr auto pure(Value&& value) {
-    return parser {parsef::pure {std::forward<Value>(value)}};
+    return parser {parsers::pure {std::forward<Value>(value)}};
 }
 
 /**
@@ -61,7 +61,7 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
  */
 template <class Func, any_parser Parser>
 constexpr auto map(Func&& func, Parser&& parser) {
-    return parsef::map {std::forward<Func>(func), std::forward<Parser>(parser)};
+    return parsers::map {std::forward<Func>(func), std::forward<Parser>(parser)};
 }
 
 /**
@@ -229,7 +229,7 @@ constexpr auto either(P&&... parsers) {
  */
 template <class Prefix, class Parser, class Postfix>
 constexpr auto surround(Prefix&& pre, Parser&& par, Postfix&& post) {
-    return parser {parsef::surround {
+    return parser {parsers::surround {
         std::forward<Prefix>(pre),
         std::forward<Parser>(par),
         std::forward<Postfix>(post)}};
@@ -241,7 +241,7 @@ constexpr auto join(P&& parser) {
 }
 template <class... P>
 constexpr auto join(P&&... parsers) {
-    return parser { parsef::join {std::forward<P>(parsers)...} };
+    return parser { parsers::join {std::forward<P>(parsers)...} };
 }
 /**
  * @brief Takes a parser parser and produces a new parser that generates a true
