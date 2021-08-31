@@ -235,40 +235,13 @@ constexpr auto surround(Prefix&& pre, Parser&& par, Postfix&& post) {
         std::forward<Postfix>(post)}};
 }
 
-template <class... First, class Last>
-constexpr auto join(First&&... first, Last&& last) {
-    constexpr bool first_always_good = (parser_always_good_v<First> && ...);
-    return [... first = std::forward<First>(first),
-            last = std::forward<Last>(last)](state_t st) {
-        if constexpr (first_always_good) {
-            ((st = first.parse(st).get_state()), ...);
-            return last.parse(st);
-        } else {
-            auto try_to_parse = [&](auto& parser) -> bool {
-                if (auto result = parser.parse(st)) {
-                    st = result.get_state();
-                    return true;
-                }
-                return false;
-            };
-            using value_type = parser_value_t<Last>;
-            using result_type = result<value_type>;
-            using last_result_type = parser_result_t<Last>;
-            if ((try_to_parse(first) && ...)) {
-                if constexpr (std::constructible_from<
-                                  result_type,
-                                  last_result_type>) {
-                    return result_type(last.parse(st));
-                } else {
-                    if (auto res = last.parse(st)) {
-                        return result_type {res.get_state(), res.get_value()};
-                    } else {
-                        return result_type {};
-                    }
-                }
-            }
-        }
-    };
+template <class P>
+constexpr auto join(P&& parser) {
+    return std::forward<P>(parser);
+}
+template <class... P>
+constexpr auto join(P&&... parsers) {
+    return parser { parsef::join {std::forward<P>(parsers)...} };
 }
 /**
  * @brief Takes a parser parser and produces a new parser that generates a true
