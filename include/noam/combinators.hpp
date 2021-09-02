@@ -1,4 +1,5 @@
 #pragma once
+#include <noam/intrinsics.hpp>
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
@@ -61,7 +62,8 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
  */
 template <class Func, any_parser Parser>
 constexpr auto map(Func&& func, Parser&& parser) {
-    return parsers::map {std::forward<Func>(func), std::forward<Parser>(parser)};
+    return parsers::map {
+        std::forward<Func>(func), std::forward<Parser>(parser)};
 }
 
 /**
@@ -228,11 +230,23 @@ constexpr auto either(P&&... parsers) {
  * @return parser
  */
 template <class Prefix, class Parser, class Postfix>
-constexpr auto surround(Prefix&& pre, Parser&& par, Postfix&& post) {
-    return parser {parsers::surround {
+constexpr auto enclose(Prefix&& pre, Parser&& par, Postfix&& post) {
+    return parser {parsers::enclose {
         std::forward<Prefix>(pre),
         std::forward<Parser>(par),
         std::forward<Postfix>(post)}};
+}
+/**
+ * @brief Matches a parser `p` with whitespace surrouding it
+ *
+ * @tparam Parser
+ * @param p
+ * @return constexpr auto
+ */
+template <class Parser>
+constexpr auto whitespace_enclose(Parser&& p) {
+    return parser {
+        parsers::enclose {whitespace, std::forward<Parser>(p), whitespace}};
 }
 
 template <class P>
@@ -250,7 +264,7 @@ constexpr auto join(P&& parser) {
  */
 template <class... P>
 constexpr auto join(P&&... parsers) {
-    return parser { parsers::join {std::forward<P>(parsers)...} };
+    return parser {parsers::join {std::forward<P>(parsers)...}};
 }
 /**
  * @brief Applies a series of parsers in sequence. Discards whatever values were
@@ -262,7 +276,7 @@ constexpr auto join(P&&... parsers) {
  */
 template <class... P>
 constexpr auto match(P&&... parsers) {
-    return parser { parsers::match {std::forward<P>(parsers)...} };
+    return parser {parsers::match {std::forward<P>(parsers)...}};
 }
 
 /**
@@ -454,6 +468,21 @@ template <class T>
 constexpr auto make() {
     return parser {[](state_t st) { return pure_result<T> {st, T()}; }};
 }
+template <class T, class P>
+constexpr auto make(P&& p) {
+    return parser {[p = std::forward<P>(p)](state_t st) {
+        if constexpr (parser_always_good_v<P>) {
+            auto res = p.parse(st);
+            return pure_result<T> {res.get_state(), T {res.get_value()}};
+        } else {
+            if (auto res = p.parse(st)) {
+                return result<T> {res.get_state(), T {res.get_value()}};
+            } else {
+                return result<T> {};
+            }
+        }
+    }};
+}
 /**
  * @brief Make combinator. Creates a parser that will construct a object whose
  * type is deduced by invoking T with arguments obtained by applying parsers
@@ -475,6 +504,85 @@ constexpr auto make(P&&... parsers) {
     }};
 }
 
+/**
+ * @brief Parses a sequence of elements, returning the result as a vector
+ *
+ * @tparam ParseElem
+ * @tparam ParseSep
+ * @param elem
+ * @param sep
+ * @return constexpr auto
+ */
+template <char separator_char, class P>
+constexpr auto sequence(P&& elem) {
+    constexpr int initial_reserve = 16;
+    using T = parser_value_t<P>;
+    using result_t = pure_result<std::vector<T>>;
+    return parser {[elem = std::forward<P>(elem)](state_t st) -> result_t {
+        constexpr auto sep = separator<separator_char>;
+        if (auto first = elem.parse(st)) {
+            // Update the state since we obtained the first value
+            st = first.get_state();
+
+            std::vector<T> value;
+            value.reserve(initial_reserve);
+            value.push_back(std::move(first).get_value());
+            while (auto sep_result = sep.parse(st)) {
+                if (auto next = elem.parse(sep_result.get_state())) {
+                    // Update the state since we obtained the next value
+                    st = next.get_state();
+                    value.push_back(std::move(next).get_value());
+                } else {
+                    break;
+                }
+            }
+            return {st, std::move(value)};
+        } else {
+            return {st, std::vector<T>()};
+        }
+    }};
+}
+template <char opening, char separator_char, char closing, class P>
+constexpr auto sequence(P&& elem) {
+    constexpr int initial_reserve = 16;
+    using T = parser_value_t<P>;
+    using result_t = result<std::vector<T>>;
+    return parser {[elem = std::forward<P>(elem)](state_t st) -> result_t {
+        constexpr auto open = parsers::match {match_ch<opening>, whitespace};
+        constexpr auto close = parsers::match {whitespace, match_ch<closing>};
+        constexpr auto sep = separator<separator_char>;
+        if (!update_state(open.parse(st), st))
+            return null_result;
+
+        std::vector<T> value;
+        if (auto first = elem.parse(st)) {
+            // Update the state since we obtained the first value
+            st = first.get_state();
+            value.reserve(initial_reserve);
+            value.push_back(std::move(first).get_value());
+            while (auto sep_result = sep.parse(st)) {
+                if (auto next = elem.parse(sep_result.get_state())) {
+                    // Update the state since we obtained the next value
+                    st = next.get_state();
+                    value.push_back(std::move(next).get_value());
+                } else {
+                    break;
+                }
+            }
+        }
+        return update_state(close.parse(st), st)
+                 ? result_t {st, std::move(value)}
+                 : null_result;
+    }};
+}
+template <char opening, char closing, class P>
+constexpr auto sequence(P&& elem) {
+    return sequence<opening, ',', closing>(std::forward<P>(elem));
+}
+template <class P>
+constexpr auto sequence(P&& elem) {
+    return sequence<','>(std::forward<P>(elem));
+}
 /**
  * @brief Parses a sequence of elements, returning the result as a vector
  *

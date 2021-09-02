@@ -69,32 +69,24 @@ auto visit(Callable&& c, Variants&&... v) {
 }
 using noam::parser;
 using noam::state_t;
-auto parse_value_impl(state_t st) -> noam::result<json_value>;
 constexpr parser parse_null = noam::join(
     noam::match_constexpr_prefix<'n', 'u', 'l', 'l'>, noam::make<null>());
-constexpr parser parse_value = parser {parse_value_impl};
-constexpr parser parse_array = surround(
-    noam::match_separator<'['>,
-    sequence(parse_value, noam::match_separator<','>),
-    noam::match_separator<']'>);
-constexpr parser parse_member = noam::make<std::pair>(
-    noam::parse_string_view,
-    noam::join(noam::match_separator<':'>, parse_value));
-constexpr parser parse_object = noam::surround(
-    noam::match_separator<'{'>,
-    noam::sequence(parse_member, noam::match_separator<','>),
-    noam::match_separator<'}'>);
-auto parse_value_impl(state_t st) -> noam::result<json_value> {
+
+auto parse_value(state_t st) -> noam::result<json_value> {
+    constexpr parser value = parser {parse_value};
+    constexpr parser member = noam::make<std::pair>(
+        noam::parse_string_view, noam::join(noam::separator<':'>, value));
     constexpr auto p = noam::either<json_value>(
         parse_null,
         noam::parse_bool,
         noam::parse_double,
         noam::parse_string_view,
-        parse_object,
-        parse_array);
+        noam::sequence<'{', '}'>(member), // Parse a json object
+        noam::sequence<'[', ']'>(value)   // Parse a json array
+    );
     return p.parse(st);
 }
-constexpr parser parse_json = surround(noam::ws, parse_value, noam::ws);
+constexpr parser parse_json = noam::whitespace_enclose(parser {parse_value});
 } // namespace json
 
 std::string_view input = R"({
@@ -122,9 +114,9 @@ std::string_view input = R"({
 
 int main() {
     constexpr auto int_seq =
-        noam::sequence(noam::parse_int, noam::match_separator<','>);
-    constexpr auto int_array = noam::surround(
-        noam::match_separator<'['>, int_seq, noam::match_separator<']'>);
+        noam::sequence(noam::parse_int, noam::separator<','>);
+    constexpr auto int_array =
+        noam::enclose(noam::separator<'['>, int_seq, noam::separator<']'>);
 
     fmt::print(
         "{}\n",

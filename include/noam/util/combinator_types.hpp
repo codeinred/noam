@@ -49,7 +49,7 @@ struct map {
 };
 
 template <class Prefix, class Value, class Postfix>
-struct surround {
+struct enclose {
     [[no_unique_address]] Prefix prefix {};
     [[no_unique_address]] Value parser {};
     [[no_unique_address]] Postfix postfix {};
@@ -67,7 +67,7 @@ struct surround {
     }
 };
 template <class A, class B, class C>
-surround(A, B, C) -> surround<A, B, C>;
+enclose(A, B, C) -> enclose<A, B, C>;
 
 template <class... Parsers>
 struct match : tuplet::tuple<Parsers...> {
