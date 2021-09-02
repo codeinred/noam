@@ -10,13 +10,15 @@ namespace json {
 using string = std::string_view;
 using number = double;
 using boolean = bool;
-using null = noam::empty;
+using null_type = noam::empty;
 struct json_value;
 using object = std::vector<std::pair<std::string_view, json_value>>;
 using array = std::vector<json_value>;
-
-struct json_value : std::variant<null, string, number, boolean, object, array> {
-    using base = std::variant<null, string, number, boolean, object, array>;
+constexpr null_type null;
+struct json_value
+  : std::variant<null_type, string, number, boolean, object, array> {
+    using base =
+        std::variant<null_type, string, number, boolean, object, array>;
     using base::base;
     using base::operator=;
     using base::index;
@@ -68,29 +70,29 @@ auto visit(Callable&& c, Variants&&... v) {
         std::forward<Callable>(c), unwrap(std::forward<Variants>(v))...);
 }
 using noam::parser;
-using noam::state_t;
-constexpr parser parse_null = noam::join(
-    noam::match_constexpr_prefix<'n', 'u', 'l', 'l'>, noam::make<null>());
+auto parse_value(noam::state_t st) -> noam::result<json_value> {
+    constexpr parser value = noam::parser {parse_value};
 
-auto parse_value(state_t st) -> noam::result<json_value> {
-    constexpr parser value = parser {parse_value};
     constexpr parser member = noam::make<std::pair>(
         noam::parse_string_view, noam::join(noam::separator<':'>, value));
-    constexpr auto p = noam::either<json_value>(
-        parse_null,
+
+    constexpr parser p = noam::either<json_value>(
+        noam::literal_constant<"null", null>, // Parses "null" as json::null
         noam::parse_bool,
         noam::parse_double,
         noam::parse_string_view,
         noam::sequence<'{', '}'>(member), // Parse a json object
-        noam::sequence<'[', ']'>(value)   // Parse a json array
-    );
+        noam::sequence<'[', ']'>(value)); // Parse a json array
     return p.parse(st);
 }
+
 constexpr parser parse_json = noam::whitespace_enclose(parser {parse_value});
+
 } // namespace json
 
 std::string_view input = R"({
     "glossary": {
+        "foo": null,
         "title": "example glossary",
 		"GlossDiv": {
             "title": "S",
@@ -129,7 +131,8 @@ int main() {
     using json::parse_json;
     fmt::print("{}\n", parse_json.parse("10").check_value(10.0));
     fmt::print("{}\n", parse_json.parse("   10   ").check_value(10.0));
-    fmt::print("{}\n", parse_json.parse("null").check_value(json::null {}));
+    fmt::print(
+        "{}\n", parse_json.parse("null").check_value(json::null_type {}));
     fmt::print(
         "{}\n",
         parse_json.parse(R"(  "hello world"   )")
@@ -139,6 +142,6 @@ int main() {
     fmt::print(
         "{}\n",
         parse_json.parse("[null, null]")
-            .check_value(json::array {json::null {}, json::null {}}));
+            .check_value(json::array {json::null_type {}, json::null_type {}}));
     fmt::print("{}\n", parse_json.parse(input).good());
 }
