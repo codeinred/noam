@@ -5,6 +5,7 @@
 #include <noam/result_types.hpp>
 #include <noam/type_traits.hpp>
 #include <noam/util/helpers.hpp>
+#include <noam/util/literal.hpp>
 #include <tuplet/tuple.hpp>
 
 // This file holds functios that return parsers based on inputs
@@ -14,6 +15,38 @@
  *
  */
 namespace noam::parsers {
+template <any_literal Literal>
+struct literal {
+    constexpr auto parse(state_t st) const -> result<empty> {
+        if (Literal.is_prefix_of(st)) {
+            return {Literal.remove_prefix(st), empty {}};
+        } else {
+            return {};
+        }
+    }
+};
+
+template <any_literal Literal, class T>
+struct literal_makes {
+    constexpr auto parse(state_t st) const -> result<T> {
+        if (Literal.is_prefix_of(st)) {
+            return {Literal.remove_prefix(st), T {}};
+        } else {
+            return {};
+        }
+    }
+};
+template <any_literal literal, auto value>
+struct literal_constant {
+    using T = std::decay_t<decltype(value)>;
+    constexpr auto parse(state_t st) const -> result<T> {
+        if (literal.is_prefix_of(st)) {
+            return {literal.remove_prefix(st), value};
+        } else {
+            return {};
+        }
+    }
+};
 template <class Value>
 struct pure {
     [[no_unique_address]] Value value {};

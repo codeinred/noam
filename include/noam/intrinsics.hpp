@@ -4,6 +4,7 @@
 #include <noam/operators.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/util/combinator_types.hpp>
 #include <string>
 
 namespace noam {
@@ -80,6 +81,14 @@ constexpr parser match_space = match_ch<' '>;
  *
  */
 constexpr parser match_spaces = match_chs<' '>;
+
+template <any_literal lit>
+constexpr parser literal = parser {parsers::literal<lit>()};
+template <any_literal lit, class T>
+constexpr parser literal_makes = parser {parsers::literal_makes<lit, T>()};
+template <any_literal lit, auto constant>
+constexpr parser literal_constant =
+    parser {parsers::literal_constant<lit, constant>()};
 
 template <char... prefix>
 constexpr parser match_constexpr_prefix = {[](state_t state) -> result<empty> {
