@@ -94,6 +94,8 @@ struct match : tuplet::tuple<Parsers...> {
         return parse_impl(st, base_list {});
     }
 };
+template <class... Parsers>
+match(Parsers...) -> match<Parsers...>;
 
 template <class... P>
 struct join : meta::all_but_last_t<match, P...> {
