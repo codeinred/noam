@@ -7,6 +7,7 @@
 #include <variant>
 #include <vector>
 namespace json {
+using noam::parser;
 using string = std::string_view;
 using number = double;
 using boolean = bool;
@@ -69,7 +70,11 @@ auto visit(Callable&& c, Variants&&... v) {
     return std::visit<R>(
         std::forward<Callable>(c), unwrap(std::forward<Variants>(v))...);
 }
-using noam::parser;
+
+
+
+
+
 auto parse_value(noam::state_t st) -> noam::result<json_value> {
     constexpr parser value = noam::parser {parse_value};
 
@@ -86,7 +91,7 @@ auto parse_value(noam::state_t st) -> noam::result<json_value> {
     return p.parse(st);
 }
 
-constexpr parser parse_json = noam::whitespace_enclose(parser {parse_value});
+constexpr parser parse_json = whitespace_enclose(parser {parse_value});
 
 } // namespace json
 
