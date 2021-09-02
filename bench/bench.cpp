@@ -107,7 +107,7 @@ constexpr noam::parser add_w_fold = noam::fold_left(
     // parse the first value as a long, so that the result's value is a long
     noam::parse_long,
     // parse the rest of the values as ints
-    noam::match_comma_separator >> noam::parse_int,
+    noam::comma_separator >> noam::parse_int,
     // Add stuff up
     [](long sum, int value) { return sum + value; });
 
@@ -115,7 +115,7 @@ constexpr noam::parser add_w_test_then =
     [](noam::state_t) -> noam::result<long> {
     using noam::parse_int;
     using noam::parser;
-    using noam::match_comma_separator;
+    using noam::comma_separator;
     using noam::try_parse;
 
     // Get the first value
@@ -128,7 +128,7 @@ constexpr noam::parser add_w_test_then =
     //      === parse_separator<','>
     //      === parse_comma_separator
     parser next_value = test_then(
-        match_comma_separator >> parse_int, [&](int value) { sum += value; });
+        comma_separator >> parse_int, [&](int value) { sum += value; });
 
     // While there's a value followed by a comma, add it to the vector
     while (co_await next_value)
@@ -142,7 +142,7 @@ constexpr noam::parser add_w_try_parse =
     [](noam::state_t) -> noam::result<long> {
     using noam::parse_int;
     using noam::parser;
-    using noam::match_comma_separator;
+    using noam::comma_separator;
     using noam::try_parse;
 
     // Get the first value
@@ -154,7 +154,7 @@ constexpr noam::parser add_w_try_parse =
     // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
     //      === parse_separator<','>
     //      === parse_comma_separator
-    parser next_value = noam::try_parse(match_comma_separator >> parse_int);
+    parser next_value = noam::try_parse(comma_separator >> parse_int);
 
     // While there's a value followed by a comma, add it to the vector
     while (std::optional value = co_await next_value) {

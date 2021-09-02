@@ -93,11 +93,14 @@ constexpr parser match_constexpr_prefix = {[](state_t state) -> result<empty> {
     return {};
 }};
 
-static_assert(match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello").good());
+static_assert(
+    match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello").good());
 
-static_assert(match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello ").good());
+static_assert(
+    match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello ").good());
 
-static_assert(!match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hell ").good());
+static_assert(
+    !match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hell ").good());
 
 /**
  * @brief Matches strings starting with the characters `chars...`. E.g,
@@ -182,11 +185,15 @@ constexpr parser parse_line = [](state_t state) {
     return noam::pure_result {state.substr(size), state};
 } / make_parser;
 
-template <char... separator>
-constexpr parser match_separator =
-    whitespace >> match_constexpr_prefix<separator...> >> whitespace;
+/**
+ * @brief Matches a particular separator character surrounded by whitespace
+ *
+ * @tparam sep
+ */
+template <char sep>
+constexpr parser separator = whitespace >> match_ch<sep> >> whitespace;
 
-constexpr parser match_comma_separator = match_separator<','>;
+constexpr parser comma_separator = separator<','>;
 
 constexpr parser parse_bool {[](state_t st) -> result<bool> {
     if (st.starts_with("true")) {
@@ -262,7 +269,8 @@ static_assert(
     parse_string_view.parse(R"("hello" world)").check_value("hello"),
     "parse_string_view broken");
 static_assert(
-    parse_string_view.parse(R"("hello\" world")").check_value(R"(hello\" world)"),
+    parse_string_view.parse(R"("hello\" world")")
+        .check_value(R"(hello\" world)"),
     "parse_string_view broken");
 
 } // namespace noam
