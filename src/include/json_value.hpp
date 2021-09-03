@@ -6,6 +6,7 @@
 #include <string_view>
 #include <tuple>
 #include <variant>
+#include <map>
 #include <vector>
 
 namespace json {
@@ -14,7 +15,7 @@ using number = double;
 using boolean = bool;
 using null_type = std::nullptr_t;
 struct json_value;
-using object = std::vector<std::pair<std::string_view, json_value>>;
+using object = std::map<std::string_view, json_value>;
 using array = std::vector<json_value>;
 constexpr std::nullptr_t null = nullptr;
 struct json_value

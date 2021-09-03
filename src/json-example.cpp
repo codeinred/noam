@@ -16,16 +16,16 @@ using noam::parser;
  *
  */
 constexpr parser parse_value = noam::recurse<json_value>([](auto parse_value) {
-    parser parse_member = noam::make<std::pair>(
-        noam::parse_string_view, noam::join(noam::separator<':'>, parse_value));
-
     return noam::either<json_value>(
         noam::literal_constant<"null", null>, // Parses "null" as json::null
         noam::parse_bool,
         noam::parse_double,
         noam::parse_string_view,
-        noam::sequence<'{', '}'>(parse_member), // Parse a json object
-        noam::sequence<'[', ']'>(parse_value)); // Parse a json array
+        noam::sequence<'[', ']'>(parse_value), // Parse a json array
+        noam::parse_map<json::object>(         // Parses a map as a json::object
+            noam::parse_string_view,           // Get the key for the map
+            parse_value                        // get the value for the map
+            ));
 });
 
 /**
@@ -51,7 +51,7 @@ std::string_view input = R"({
 					"Abbrev": "ISO 8879:1986",
 					"GlossDef": {
                         "para": "A meta-markup language, used to create markup languages such as DocBook.",
-						"GlossSeeAlso": ["GML", "XML"]
+						"GlossSeeAlso": ["GML", "XML", 10, 20, 30, 40, null, [1, 2, 3, 4, "hello", {"blarg": [[], [], [[], [[[], ["blarg", {"foo": [10, 20, 10, 1]}]], 20]]]}]]
                     },
 					"GlossSee": "markup"
                 }
@@ -63,8 +63,7 @@ std::string_view input = R"({
 
 void parse_n_print(std::string_view sv) {
     if (auto res = json::parse_json.parse(sv)) {
-        fmt::print("success.\n");
-        fmt::print("output: {}\n", res.get_value());
+        fmt::print("{}\n", res.get_value());
     } else {
         fmt::print("failed");
     }
