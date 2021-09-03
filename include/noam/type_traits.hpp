@@ -8,7 +8,7 @@ using std::invocable;
 using std::same_as;
 
 template <class T>
-concept empty_type = std::is_empty_v<std::decay_t<T>>;
+concept stateless = std::is_empty_v<std::decay_t<T>>;
 
 // A qualified type is a type that is a reference, is const, or is both
 template <class T>
