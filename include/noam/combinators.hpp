@@ -504,6 +504,19 @@ constexpr auto make(P&&... parsers) {
     }};
 }
 
+template <template <class...> class T, char sep, class P1, class... P2>
+constexpr auto make(P1&& first, P2&&... rest) {
+    return make<T>(
+        std::forward<P1>(first),
+        parsers::join {separator<sep>, std::forward<P2>(rest)}...);
+}
+template <class T, char sep, class P1, class... P2>
+constexpr auto make(P1&& first, P2&&... rest) {
+    return make<T>(
+        std::forward<P1>(first),
+        parsers::join {separator<sep>, std::forward<P2>(rest)}...);
+}
+
 /**
  * @brief Parses a sequence of elements, returning the result as a vector
  *
@@ -623,9 +636,70 @@ constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
         }};
 }
 
+template <
+    class Map,
+    char opening,
+    char separator_char,
+    char kv_sep,
+    char closing,
+    class K,
+    class V>
+constexpr auto parse_map(K&& key, V&& val) {
+    using KeyT = parser_value_t<K>;
+    using ValT = parser_value_t<V>;
+    using result_t = result<Map>;
+    return parser {
+        [elem = noam::make<tuplet::pair, kv_sep>(
+             std::forward<K>(key), std::forward<V>(val))](
+            state_t st) -> result_t {
+            constexpr auto open =
+                parsers::match {match_ch<opening>, whitespace};
+            constexpr auto close =
+                parsers::match {whitespace, match_ch<closing>};
+            constexpr auto sep = separator<separator_char>;
+            if (!update_state(open.parse(st), st))
+                return null_result;
+
+            Map map;
+            if (auto first = elem.parse(st)) {
+                // Update the state since we obtained the first value
+                st = first.get_state();
+                {
+                    auto& [key, val] = first.get_value();
+                    map.emplace(std::move(key), std::move(val));
+                }
+                while (auto sep_result = sep.parse(st)) {
+                    if (auto next = elem.parse(sep_result.get_state())) {
+                        // Update the state since we obtained the next value
+                        st = next.get_state();
+                        {
+                            auto& [key, val] = next.get_value();
+                            map.emplace(std::move(key), std::move(val));
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+            return update_state(close.parse(st), st)
+                     ? result_t {st, std::move(map)}
+                     : null_result;
+        }};
+}
+
+template <class Map, char opening, char closing, class K, class V>
+constexpr auto parse_map(K&& key, V&& val) {
+    return parse_map<Map, opening, ',', ':', closing>(
+        std::forward<K>(key), std::forward<V>(val));
+}
+template <class Map, class K, class V>
+constexpr auto parse_map(K&& key, V&& val) {
+    return parse_map<Map, '{', ',', ':', '}'>(
+        std::forward<K>(key), std::forward<V>(val));
+}
 template <class T, class Func>
 constexpr auto recurse(Func&& func) {
-    return parser { parsers::recurse<T, Func>{func} };
+    return parser {parsers::recurse<T, Func> {func}};
 }
 
 template <class T, stateless Func>
