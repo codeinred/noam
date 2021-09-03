@@ -622,4 +622,14 @@ constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
             }
         }};
 }
+
+template <class T, class Func>
+constexpr auto recurse(Func&& func) {
+    return parser { parsers::recurse<T, Func>{func} };
+}
+
+template <class T, stateless Func>
+constexpr auto recurse(Func func) {
+    return parser {parsers::recurse_constant<T, Func {}> {}};
+}
 } // namespace noam

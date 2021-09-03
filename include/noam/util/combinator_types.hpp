@@ -157,4 +157,28 @@ struct join : meta::all_but_last_t<match, P...> {
 };
 template <class... T>
 join(T...) -> join<T...>;
+
+template <class T, class Func>
+struct recurse {
+    struct ref_self {
+        recurse const& parse;
+    };
+    [[no_unique_address]] Func func;
+
+    result<T> operator()(state_t st) const {
+        auto parser = func(ref_self {*this});
+        return (parser.parse(st));
+    }
+    result<T> parse(state_t st) const {
+        auto parser = func(ref_self {*this});
+        return (parser.parse(st));
+    }
+};
+template <class T, auto func>
+struct recurse_constant {
+    result<T> parse(state_t st) const {
+        constexpr auto parser = func(recurse_constant {});
+        return parser.parse(st);
+    }
+};
 } // namespace noam::parsers
