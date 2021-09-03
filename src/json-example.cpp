@@ -8,23 +8,32 @@
 
 namespace json {
 using noam::parser;
-auto parse_value(noam::state_t st) -> noam::result<json_value> {
-    constexpr parser value = noam::parser {parse_value};
+/**
+ * The noam::recurse<T> takes a function f : parser T -> parser T, and produces
+ * a parser T. This allows you to create parsers that reference themselves.
+ *
+ * @brief parse_value parses a json value
+ *
+ */
+constexpr parser parse_value = noam::recurse<json_value>([](auto parse_value) {
+    parser parse_member = noam::make<std::pair>(
+        noam::parse_string_view, noam::join(noam::separator<':'>, parse_value));
 
-    constexpr parser member = noam::make<std::pair>(
-        noam::parse_string_view, noam::join(noam::separator<':'>, value));
-
-    constexpr parser p = noam::either<json_value>(
+    return noam::either<json_value>(
         noam::literal_constant<"null", null>, // Parses "null" as json::null
         noam::parse_bool,
         noam::parse_double,
         noam::parse_string_view,
-        noam::sequence<'{', '}'>(member), // Parse a json object
-        noam::sequence<'[', ']'>(value)); // Parse a json array
-    return p.parse(st);
-}
+        noam::sequence<'{', '}'>(parse_member), // Parse a json object
+        noam::sequence<'[', ']'>(parse_value)); // Parse a json array
+});
 
-constexpr parser parse_json = whitespace_enclose(parser {parse_value});
+/**
+ * @brief This is essentially the same as parse_value, except it will trim any
+ * whitespace
+ *
+ */
+constexpr parser parse_json = noam::whitespace_enclose(parse_value);
 } // namespace json
 
 std::string_view input = R"({
@@ -51,34 +60,14 @@ std::string_view input = R"({
     }
 })";
 
-int main() {
-    constexpr auto int_seq =
-        noam::sequence(noam::parse_int, noam::separator<','>);
-    constexpr auto int_array =
-        noam::enclose(noam::separator<'['>, int_seq, noam::separator<']'>);
 
-    fmt::print(
-        "{}\n",
-        int_seq.parse("10, 20, 30").check_value(std::vector {10, 20, 30}));
-    fmt::print("{}\n", int_seq.parse("10").check_value(std::vector {10}));
-    fmt::print("{}\n", int_seq.parse("").check_value(std::vector<int> {}));
-    fmt::print(
-        "{}\n",
-        int_array.parse("[10, 20, 30]").check_value(std::vector {10, 20, 30}));
-    using json::parse_json;
-    fmt::print("{}\n", parse_json.parse("10").check_value(10.0));
-    fmt::print("{}\n", parse_json.parse("   10   ").check_value(10.0));
-    fmt::print(
-        "{}\n", parse_json.parse("null").check_value(json::null_type {}));
-    fmt::print(
-        "{}\n",
-        parse_json.parse(R"(  "hello world"   )")
-            .check_value(json::string("hello world")));
-    fmt::print("{}\n", parse_json.parse("{}").check_value(json::object {}));
-    fmt::print("{}\n", parse_json.parse("[]").check_value(json::array {}));
-    fmt::print(
-        "{}\n",
-        parse_json.parse("[null, null]")
-            .check_value(json::array {json::null_type {}, json::null_type {}}));
-    fmt::print("{}\n", parse_json.parse(input).good());
+void parse_n_print(std::string_view sv) {
+    if (auto res = json::parse_json.parse(sv)) {
+        fmt::print("success.\n");
+        fmt::print("output: {}\n", res.get_value());
+    } else {
+        fmt::print("failed");
+    }
 }
+
+int main() { parse_n_print(input); }
