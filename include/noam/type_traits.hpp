@@ -7,6 +7,9 @@ using std::convertible_to;
 using std::invocable;
 using std::same_as;
 
+template <class T>
+concept empty_type = std::is_empty_v<std::decay_t<T>>;
+
 // A qualified type is a type that is a reference, is const, or is both
 template <class T>
 concept qualified_type = std::is_reference_v<T> || std::is_const_v<T>;
