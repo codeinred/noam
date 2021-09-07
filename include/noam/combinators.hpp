@@ -703,7 +703,7 @@ constexpr auto recurse(Func&& func) {
 }
 
 template <class T, stateless Func>
-constexpr auto recurse(Func func) {
-    return parser {parsers::recurse_constant<T, Func {}> {}};
+constexpr auto recurse(Func&& func) {
+    return parser {parsers::recurse_constant<T, std::decay_t<Func> {}> {}};
 }
 } // namespace noam
