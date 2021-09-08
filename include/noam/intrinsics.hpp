@@ -5,12 +5,12 @@
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
 #include <noam/util/combinator_types.hpp>
-#include <string>
 #include <noam/util/intrinsic_types.hpp>
+#include <string>
 
 namespace noam {
 template <class T>
-constexpr parser parse_charconv = parser { parsers::charconv<T>{} };
+constexpr parser parse_charconv {parsers::charconv<T> {}};
 
 constexpr parser parse_short = parse_charconv<short>;
 constexpr parser parse_ushort = parse_charconv<unsigned short>;
@@ -35,12 +35,12 @@ constexpr parser parse_double = parse_charconv<double>;
 constexpr parser parse_long_double = parse_charconv<long double>;
 
 template <any_literal... lit>
-constexpr parser literal = parser {parsers::literal<lit...>()};
+constexpr parser literal {parsers::literal<lit...> {}};
 template <class T, any_literal... lit>
-constexpr parser literal_makes = parser {parsers::literal_makes<T, lit...>()};
+constexpr parser literal_makes {parsers::literal_makes<T, lit...> {}};
 template <auto constant, any_literal... lit>
-constexpr parser literal_constant =
-    parser {parsers::literal_constant<constant, lit...>()};
+constexpr parser literal_constant {
+    parsers::literal_constant<constant, lit...> {}};
 
 /**
  * @brief Matches one character in `{ char_set... }`
@@ -56,7 +56,7 @@ constexpr parser match_ch = literal<char_set...>;
  * @tparam chars the sequence of characters to match against
  */
 template <char... chars>
-constexpr parser match_chs = { parsers::zero_or_more_chars<chars...>() };
+constexpr parser match_chs {parsers::zero_or_more_chars<chars...> {}};
 
 /**
  * @brief Matches one space character (`' '`)
@@ -70,19 +70,7 @@ constexpr parser match_space = match_ch<' '>;
 constexpr parser match_spaces = match_chs<' '>;
 
 template <char... chars>
-constexpr parser count_ch = [](state_t state) {
-    size_t size = state.size();
-    for (size_t i = 0; i < size; i++) {
-        char current = state[i];
-
-        // If one of them matches then we continue testing chars
-        if (((chars == current) || ...))
-            continue;
-
-        return noam::pure_result {state.substr(i), i};
-    }
-    return noam::pure_result {state.substr(size), size};
-} / make_parser;
+constexpr parser count_ch {parsers::count_chars<chars...> {}};
 
 /**
  * @brief Parses 0 or more spaces and returns the number of characters read
@@ -139,56 +127,14 @@ constexpr parser parse_line = [](state_t state) {
  * @tparam sep
  */
 template <char sep>
-constexpr parser separator = whitespace >> match_ch<sep> >> whitespace;
+constexpr parser separator {
+    parsers::match {whitespace, match_ch<sep>, whitespace}};
 
 constexpr parser comma_separator = separator<','>;
 
-constexpr parser parse_bool {[](state_t st) -> result<bool> {
-    if (st.starts_with("true")) {
-        return {st.substr(4), true};
-    }
-    if (st.starts_with("false")) {
-        return {st.substr(5), false};
-    }
-    return {};
-}};
+constexpr parser parse_bool {parsers::bool_parser {}};
 
-constexpr parser parse_string = parser {[](state_t st) -> result<std::string> {
-    if (st.size() >= 2 && st[0] == '"') {
-        std::string str;
-        size_t i = 1;
-        size_t count = st.size() - 1;
-        while (i < count) {
-            char c = st[i];
-            char val = c;
-            if (c == '\\') {
-                char next = st[i + 1];
-                switch (next) {
-                    case 'b': val = '\b'; break;
-                    case 'f': val = '\f'; break;
-                    case 'n': val = '\n'; break;
-                    case 'r': val = '\r'; break;
-                    case 't': val = '\t'; break;
-                    case '\\': val = '\\'; break;
-                    case '"': val = '"'; break;
-                    // The parser fails on an unrecognized escape code
-                    default: return {};
-                }
-                i += 2;
-            } else if (c == '"') {
-                break;
-            } else {
-                val = c;
-                i += 1;
-            }
-            str.push_back(val);
-        }
-        if (st[i] == '"') {
-            return {st.substr(i + 1), std::move(str)};
-        }
-    }
-    return {};
-}};
+constexpr parser parse_string {parsers::string_parser {}};
 
 /**
  * @brief Parses a section of characters between an opening and closing quote.
@@ -196,16 +142,7 @@ constexpr parser parse_string = parser {[](state_t st) -> result<std::string> {
  * unmodified: any escaped characters in the string remain escaped.
  *
  */
-constexpr parser parse_string_view {[](state_t st) -> result<std::string_view> {
-    if (st.size() >= 2 && st[0] == '"') {
-        for (intptr_t i = 1; i < st.size(); i++) {
-            if (st[i] == '"' && st[i - 1] != '\\') {
-                return {st.substr(i + 1), st.substr(1, i - 1)};
-            }
-        }
-    }
-    return {};
-}};
+constexpr parser parse_string_view {parsers::view_parser<'"', '"', '\\'> {}};
 
 static_assert(
     parse_string_view.parse(R"("")").check_value(""),
