@@ -145,36 +145,6 @@ using state_result = pure_result<state>;
 template <class Value>
 using optional_result = pure_result<std::optional<Value>>;
 
-template <char... ch>
-struct match_constexpr_prefix_result : state {
-   private:
-    constexpr static char ch_array[sizeof...(ch) + 1] {ch..., '\0'};
-
-   public:
-    /**
-     * @brief The prefix that this result matches
-     *
-     */
-    constexpr static state value {ch_array, sizeof...(ch)};
-    using value_type = state;
-    match_constexpr_prefix_result() = default;
-    match_constexpr_prefix_result(state st) noexcept
-      : state(st) {}
-    match_constexpr_prefix_result(match_constexpr_prefix_result const&) =
-        default;
-    match_constexpr_prefix_result(match_constexpr_prefix_result&&) = default;
-    match_constexpr_prefix_result&
-    operator=(match_constexpr_prefix_result const&) = default;
-    match_constexpr_prefix_result&
-    operator=(match_constexpr_prefix_result&&) = default;
-    using state::get_state;
-    using state::operator bool;
-    using state::set_state;
-    constexpr state_t get_value() const noexcept { return value; }
-    constexpr operator result<value_type>() const noexcept {
-        return {get_state(), get_value()};
-    }
-};
 
 // *To be read in the same voice you'd use to speak to a dog who's a good boy.*
 // Who's a good boy? pure_result is! You're a good boy, aren't you? Yes you are!
