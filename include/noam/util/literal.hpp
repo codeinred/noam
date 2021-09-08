@@ -15,13 +15,13 @@ struct string_literal {
         }
     }
     constexpr size_t size() const noexcept { return N; }
-    constexpr bool is_prefix_of(std::string_view sv) const {
-        return sv.starts_with(std::string_view(str, N));
-    }
-    constexpr auto remove_prefix(std::string_view sv) const noexcept
-        -> std::string_view {
-        sv.remove_prefix(N);
-        return sv;
+    constexpr bool check_and_update(state_t& st) const noexcept {
+        if (st.starts_with(std::string_view(str, N))) {
+            st.remove_prefix(N);
+            return true;
+        } else {
+            return false;
+        }
     }
 };
 template <size_t N>
@@ -29,40 +29,39 @@ string_literal(char const (&)[N]) -> string_literal<N - 1>;
 
 struct char_literal {
     char ch {};
+    char_literal() = default;
+    char_literal(char_literal const&) = default;
+    char_literal(char_literal&&) = default;
+    constexpr char_literal(char ch) noexcept : ch(ch) {}
     constexpr size_t size() const noexcept { return 1; }
-    constexpr bool is_prefix_of(std::string_view sv) const noexcept {
-        return sv.starts_with(ch);
-    }
-    constexpr auto remove_prefix(std::string_view sv) const noexcept
-        -> std::string_view {
-        sv.remove_prefix(1);
-        return sv;
+    constexpr bool check_and_update(state_t& st) const noexcept {
+        if (st.starts_with(ch)) {
+            st.remove_prefix(1);
+            return true;
+        } else {
+            return false;
+        }
     }
 };
 
 struct empty_literal {
     constexpr size_t size() const noexcept { return 0; }
-    constexpr bool is_prefix_of(std::string_view sv) {
-        return true;
-    }
-    constexpr auto remove_prefix(std::string_view sv) const noexcept -> std::string_view {
-        return sv;
-    }
+    constexpr bool check_and_update(state_t& st) const noexcept { return true; }
 };
 
-template<class Base>
+template <class Base>
 struct any_literal : Base {
-    using Base::size;
-    using Base::is_prefix_of;
-    using Base::remove_prefix;
     using Base::Base;
+    using Base::check_and_update;
+    using Base::size;
     any_literal() = default;
     any_literal(any_literal const&) = default;
     any_literal(any_literal&&) = default;
 };
-any_literal() -> any_literal<empty_literal>;
-any_literal(empty_literal) -> any_literal<empty_literal>;
-any_literal(char c) -> any_literal<char_literal>;
+any_literal()->any_literal<empty_literal>;
+any_literal(empty_literal)->any_literal<empty_literal>;
+any_literal(char c)->any_literal<char_literal>;
 template <size_t N>
 any_literal(char const (&)[N]) -> any_literal<string_literal<N - 1>>;
+any_literal(char const (&)[1]) -> any_literal<empty_literal>;
 } // namespace noam
