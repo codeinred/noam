@@ -210,4 +210,5 @@ struct line_parser {
         }
         return {state.substr(size), state};
     };
+};
 } // namespace noam::parsers
