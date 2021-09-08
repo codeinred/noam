@@ -124,7 +124,7 @@ constexpr noam::parser add_w_test_then =
     // (>>) : Parser a -> Parser b -> Parser b
     // noam::try_parse : Parser a -> Parser Maybe a
     // NB: parse_comma_separator reads whitespace on either side of the comma
-    // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
+    // so (whitespace >> match_ch<','> >> whitespace)
     //      === parse_separator<','>
     //      === parse_comma_separator
     parser next_value = test_then(
@@ -151,7 +151,7 @@ constexpr noam::parser add_w_try_parse =
     // (>>) : Parser a -> Parser b -> Parser b
     // noam::try_parse : Parser a -> Parser Maybe a
     // NB: parse_comma_separator reads whitespace on either side of the comma
-    // so (whitespace >> parse_constexpr_prefix<','> >> whitespace)
+    // so (whitespace >> match_ch<','> >> whitespace)
     //      === parse_separator<','>
     //      === parse_comma_separator
     parser next_value = noam::try_parse(comma_separator >> parse_int);

@@ -6,20 +6,11 @@
 #include <noam/result_types.hpp>
 #include <noam/util/combinator_types.hpp>
 #include <string>
+#include <noam/util/intrinsic_types.hpp>
 
 namespace noam {
 template <class T>
-constexpr parser parse_charconv = [](state_t state) -> result<T> {
-    auto start_ = state.data();
-    auto end_ = state.data() + state.size();
-    T value;
-    auto result = std::from_chars(start_, end_, value);
-    if (result.ec == std::errc()) {
-        return {state_t(result.ptr, end_), value};
-    } else {
-        return {};
-    }
-} / make_parser;
+constexpr parser parse_charconv = parser { parsers::charconv<T>{} };
 
 constexpr parser parse_short = parse_charconv<short>;
 constexpr parser parse_ushort = parse_charconv<unsigned short>;
@@ -43,33 +34,29 @@ constexpr parser parse_float = parse_charconv<float>;
 constexpr parser parse_double = parse_charconv<double>;
 constexpr parser parse_long_double = parse_charconv<long double>;
 
+template <any_literal... lit>
+constexpr parser literal = parser {parsers::literal<lit...>()};
+template <class T, any_literal... lit>
+constexpr parser literal_makes = parser {parsers::literal_makes<T, lit...>()};
+template <auto constant, any_literal... lit>
+constexpr parser literal_constant =
+    parser {parsers::literal_constant<constant, lit...>()};
+
 /**
  * @brief Matches one character in `{ char_set... }`
  *
  * @tparam char_set The set of characters that can be matched
  */
 template <char... char_set>
-constexpr parser match_ch = {[](state_t state) -> result<empty> {
-    if (state._begin < state._end) {
-        char first = *state._begin;
-        if (((char_set == first) || ...))
-            return {state.substr(1), empty {}};
-    }
-    return {};
-}};
+constexpr parser match_ch = literal<char_set...>;
+
 /**
- * @brief Matches zero or more characters in `{ char_set... }`
+ * @brief Matches zero or more characters the sequnce chars...
  *
- * @tparam char_set The set of characters that can be matched
+ * @tparam chars the sequence of characters to match against
  */
-template <char... char_set>
-constexpr parser match_chs = {[](state_t state) -> pure_result<empty> {
-    char const* begin = state._begin;
-    char const* end = state._end;
-    while (begin < end && ((*begin == char_set) || ...))
-        begin++;
-    return {state_t {begin, end}, empty {}};
-}};
+template <char... chars>
+constexpr parser match_chs = { parsers::zero_or_more_chars<chars...>() };
 
 /**
  * @brief Matches one space character (`' '`)
@@ -81,54 +68,6 @@ constexpr parser match_space = match_ch<' '>;
  *
  */
 constexpr parser match_spaces = match_chs<' '>;
-
-template <any_literal lit>
-constexpr parser literal = parser {parsers::literal<lit>()};
-template <any_literal lit, class T>
-constexpr parser literal_makes = parser {parsers::literal_makes<lit, T>()};
-template <any_literal lit, auto constant>
-constexpr parser literal_constant =
-    parser {parsers::literal_constant<lit, constant>()};
-
-template <char... prefix>
-constexpr parser match_constexpr_prefix = {[](state_t state) -> result<empty> {
-    if (sizeof...(prefix) <= state.size()) {
-        char const* begin = state._begin;
-        const char* end = state._end;
-        if (((*begin++ == prefix) && ...)) {
-            return {state.substr(sizeof...(prefix)), empty {}};
-        }
-    }
-    return {};
-}};
-
-static_assert(
-    match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello").good());
-
-static_assert(
-    match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hello ").good());
-
-static_assert(
-    !match_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>.parse("hell ").good());
-
-/**
- * @brief Matches strings starting with the characters `chars...`. E.g,
- * `parse_constexpr_prefix<'h', 'e', 'l', 'l', 'o'>` matches strings starting
- * with "hello"
- *
- * @tparam chars the prefix to match
- */
-template <char... chars>
-constexpr parser parse_constexpr_prefix =
-    [](state_t state) -> match_constexpr_prefix_result<chars...> {
-    int i = 0;
-    if (state.size() >= sizeof...(chars) && ((state[i++] == chars) && ...)) {
-        state.remove_prefix(sizeof...(chars));
-        return match_constexpr_prefix_result<chars...>(state);
-    } else {
-        return {};
-    }
-} / make_parser;
 
 template <char... chars>
 constexpr parser count_ch = [](state_t state) {

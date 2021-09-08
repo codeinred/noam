@@ -17,7 +17,7 @@ using noam::parser;
  */
 constexpr parser parse_value = noam::recurse<json_value>([](auto parse_value) {
     return noam::either<json_value>(
-        noam::literal_constant<"null", null>, // Parses "null" as json::null
+        noam::literal_constant<null, "null">, // Parses "null" as json::null
         noam::parse_bool,
         noam::parse_double,
         noam::parse_string_view,
