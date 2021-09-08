@@ -100,26 +100,7 @@ constexpr parser ws = whitespace;
  * in the parsed line.
  *
  */
-constexpr parser parse_line = [](state_t state) {
-    size_t size = state.size();
-    for (size_t i = 0; i < size; i++) {
-        char current = state[i];
-
-        // If one of them matches then we continue testing chars
-        if (current != '\n')
-            continue;
-
-        // line_size = i, unless there's a carriage return, in which case
-        // line_size = i - 1
-        size_t line_size = i;
-        if (i > 0 && state[i - 1] == '\r') {
-            line_size = i - 1;
-        }
-        return noam::pure_result {
-            state.substr(i + 1), state.substr(0, line_size)};
-    }
-    return noam::pure_result {state.substr(size), state};
-} / make_parser;
+constexpr parser parse_line {parsers::line_parser {}};
 
 /**
  * @brief Matches any separator in the given sequence of separators, with
@@ -144,7 +125,6 @@ constexpr parser parse_string {parsers::string_parser {}};
  *
  */
 constexpr parser parse_string_view {parsers::view_parser<'"', '"', '\\'> {}};
-
 
 static_assert(
     std::is_empty_v<std::decay_t<decltype(separator<','>)>>,
