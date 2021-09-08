@@ -122,13 +122,14 @@ constexpr parser parse_line = [](state_t state) {
 } / make_parser;
 
 /**
- * @brief Matches a particular separator character surrounded by whitespace
+ * @brief Matches any separator in the given sequence of separators, with
+ * surrounding whitespace
  *
- * @tparam sep
+ * @tparam sep the sequence of separators to match against
  */
-template <char sep>
+template <any_literal... sep>
 constexpr parser separator {
-    parsers::match {whitespace, match_ch<sep>, whitespace}};
+    parsers::match {whitespace, literal<sep...>, whitespace}};
 
 constexpr parser comma_separator = separator<','>;
 
@@ -144,6 +145,10 @@ constexpr parser parse_string {parsers::string_parser {}};
  */
 constexpr parser parse_string_view {parsers::view_parser<'"', '"', '\\'> {}};
 
+
+static_assert(
+    std::is_empty_v<std::decay_t<decltype(separator<','>)>>,
+    "Expected separator to be empty. Are you missing a [[no_unique_address]]?");
 static_assert(
     parse_string_view.parse(R"("")").check_value(""),
     "parse_string_view broken");
