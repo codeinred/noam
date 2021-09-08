@@ -27,7 +27,5 @@ int main() {
     TEST(noam::parse_double, "3.14159e10hello", 3.14159e10, "hello");
     TEST(noam::parse_long_double, "3.14159hello", 3.14159, "hello");
     TEST(noam::parse_long_double, "3.14159e10hello", 3.14159e10, "hello");
-    constexpr auto match_1234_prefix = noam::parse_constexpr_prefix<'1', '2', '3', '4'>;
-    TEST(match_1234_prefix, "1234. hello", "1234", ". hello");
     return all_passed ? 0 : 1;
 }
