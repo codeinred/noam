@@ -504,13 +504,13 @@ constexpr auto make(P&&... parsers) {
     }};
 }
 
-template <template <class...> class T, char sep, class P1, class... P2>
+template <template <class...> class T, any_literal sep, class P1, class... P2>
 constexpr auto make(P1&& first, P2&&... rest) {
     return make<T>(
         std::forward<P1>(first),
         parsers::join {separator<sep>, std::forward<P2>(rest)}...);
 }
-template <class T, char sep, class P1, class... P2>
+template <class T, any_literal sep, class P1, class... P2>
 constexpr auto make(P1&& first, P2&&... rest) {
     return make<T>(
         std::forward<P1>(first),
@@ -526,13 +526,13 @@ constexpr auto make(P1&& first, P2&&... rest) {
  * @param sep
  * @return constexpr auto
  */
-template <char separator_char, class P>
+template <any_literal Sep, class P>
 constexpr auto sequence(P&& elem) {
     constexpr int initial_reserve = 16;
     using T = parser_value_t<P>;
     using result_t = pure_result<std::vector<T>>;
     return parser {[elem = std::forward<P>(elem)](state_t st) -> result_t {
-        constexpr auto sep = separator<separator_char>;
+        constexpr auto sep = separator<Sep>;
         if (auto first = elem.parse(st)) {
             // Update the state since we obtained the first value
             st = first.get_state();
@@ -555,15 +555,19 @@ constexpr auto sequence(P&& elem) {
         }
     }};
 }
-template <char opening, char separator_char, char closing, class P>
+template <
+    any_literal Opening,
+    any_literal Separator,
+    any_literal Closing,
+    class P>
 constexpr auto sequence(P&& elem) {
     constexpr int initial_reserve = 16;
     using T = parser_value_t<P>;
     using result_t = result<std::vector<T>>;
     return parser {[elem = std::forward<P>(elem)](state_t st) -> result_t {
-        constexpr auto open = parsers::match {match_ch<opening>, whitespace};
-        constexpr auto close = parsers::match {whitespace, match_ch<closing>};
-        constexpr auto sep = separator<separator_char>;
+        constexpr auto open = parsers::match {literal<Opening>, whitespace};
+        constexpr auto close = parsers::match {whitespace, literal<Closing>};
+        constexpr auto sep = separator<Separator>;
         if (!update_state(open.parse(st), st))
             return null_result;
 
@@ -588,9 +592,9 @@ constexpr auto sequence(P&& elem) {
                  : null_result;
     }};
 }
-template <char opening, char closing, class P>
+template <any_literal Opening, any_literal Closing, class P>
 constexpr auto sequence(P&& elem) {
-    return sequence<opening, ',', closing>(std::forward<P>(elem));
+    return sequence<Opening, ',', Closing>(std::forward<P>(elem));
 }
 template <class P>
 constexpr auto sequence(P&& elem) {
@@ -638,10 +642,10 @@ constexpr auto sequence(ParseElem&& elem, ParseSep&& sep) {
 
 template <
     class Map,
-    char opening,
-    char separator_char,
-    char kv_sep,
-    char closing,
+    any_literal Opening,
+    any_literal ElemSeparator,
+    any_literal KeyValueSeparator,
+    any_literal Closing,
     class K,
     class V>
 constexpr auto parse_map(K&& key, V&& val) {
@@ -649,14 +653,14 @@ constexpr auto parse_map(K&& key, V&& val) {
     using ValT = parser_value_t<V>;
     using result_t = result<Map>;
     return parser {
-        [elem = noam::make<tuplet::pair, kv_sep>(
+        [elem = noam::make<tuplet::pair, KeyValueSeparator>(
              std::forward<K>(key), std::forward<V>(val))](
             state_t st) -> result_t {
             constexpr auto open =
-                parsers::match {match_ch<opening>, whitespace};
+                parsers::match {literal<Opening>, whitespace};
             constexpr auto close =
-                parsers::match {whitespace, match_ch<closing>};
-            constexpr auto sep = separator<separator_char>;
+                parsers::match {whitespace, literal<Closing>};
+            constexpr auto sep = separator<ElemSeparator>;
             if (!update_state(open.parse(st), st))
                 return null_result;
 
@@ -687,9 +691,9 @@ constexpr auto parse_map(K&& key, V&& val) {
         }};
 }
 
-template <class Map, char opening, char closing, class K, class V>
+template <class Map, any_literal Opening, any_literal Closing, class K, class V>
 constexpr auto parse_map(K&& key, V&& val) {
-    return parse_map<Map, opening, ',', ':', closing>(
+    return parse_map<Map, Opening, ',', ':', Closing>(
         std::forward<K>(key), std::forward<V>(val));
 }
 template <class Map, class K, class V>
