@@ -12,6 +12,21 @@ project(${project_name} CXX)
 ## Section 2: Defaults, Definitions and helper functions ##
 ###########################################################
 
+# PROJECT_IS_TOP_LEVEL is a variable added in CMake 3.21 that checks if the
+# current project is the top-level project. This checks if it's been defined,
+# and if not, it defines it.
+if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
+    set(PROJECT_IS_TOP_LEVEL (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}))
+endif()
+
+# If ALWAYS_FETCH is ON, then find_or_fetch will always fetch dependencies
+# Rather than using the ones provided by the system. This is useful for
+# Creating a static executable.
+option(
+    ALWAYS_FETCH
+    "Tells find_or_fetch to always fetch packages"
+    OFF)
+
 # We want to export compile commands b/c it's useful for ccls
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -46,8 +61,11 @@ endfunction()
 # find_package. If it fails to find one, it'll use FetchContent to download and
 # build it locally.
 function(find_or_fetch package repo tag)
-    find_package(${package} QUIET)
-    if (NOT ${${package}_FOUND})
+    if (NOT ALWAYS_FETCH)
+        find_package(${package} QUIET)
+    endif()
+
+    if (ALWAYS_FETCH OR NOT ${${package}_FOUND})
         note("Fetching dependency '${package}' from ${repo}")
         include(FetchContent)
         FetchContent_Declare(
@@ -67,9 +85,10 @@ endfunction()
 function(add_source_dir dir)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
         file(GLOB all_targets "${dir}/*.cpp")
+        string(REPLACE ";" ", " library_list "${ARGN}")
         foreach(filename ${all_targets})
             get_filename_component(target ${filename} NAME_WLE)
-            note("Adding '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
+            note("Adding '${target}' from ${dir}/${target}.cpp with libraries ${library_list}")
             add_executable("${target}" "${filename}")
             target_link_libraries("${target}" PRIVATE ${ARGN})
         endforeach()
@@ -86,9 +105,10 @@ function(add_test_dir dir)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
         include(CTest)
         file(GLOB all_targets "${dir}/*.cpp")
+        string(REPLACE ";" ", " library_list "${ARGN}")
         foreach(filename ${all_targets})
             get_filename_component(target ${filename} NAME_WLE)
-            note("Adding test '${target}' from ${dir}/${target}.cpp with libraries ${ARGN}")
+            note("Adding test '${target}' from ${dir}/${target}.cpp with libraries ${library_list}")
             add_executable("${target}" "${filename}")
             target_link_libraries("${target}" PRIVATE ${ARGN})
             add_test(NAME "${target}" COMMAND "${target}")
@@ -98,12 +118,7 @@ function(add_test_dir dir)
     endif()
 endfunction()
 
-# PROJECT_IS_TOP_LEVEL is a variable added in CMake 3.21 that checks if the
-# current project is the top-level project. This checks if it's been defined,
-# and if not, it defines it.
-if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
-    set(PROJECT_IS_TOP_LEVEL (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}))
-endif()
+
 
 # Targets C++20 for a given target. also adds additional compiler options
 # in order to ensure greater levels of compatibility.
@@ -132,6 +147,18 @@ endfunction()
 # Use pthreads, if availible
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+function(add_submodules libname dir)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+        file(GLOB all_modules "${dir}/*")
+        foreach(module_dir ${all_modules})
+            get_filename_component(module ${module_dir} NAME)
+            note("Linked ${module} @ ${dir}/${module}")
+            add_subdirectory("${dir}/${module}")
+            target_link_libraries(${libname} INTERFACE ${module})
+        endforeach()
+    endif()
+endfunction()
+
 ###################################
 ## Section 3: Project CMake code ##
 ###################################
@@ -142,15 +169,7 @@ add_library(${libname} INTERFACE)
 target_cpp_20(${libname})
 
 # Add every directory in the modules/ folder as a subdirectory
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/modules")
-    file(GLOB all_modules "modules/*")
-    foreach(module_dir ${all_modules})
-        get_filename_component(module ${module_dir} NAME)
-        note("Linked ${module} @ modules/${module}")
-        add_subdirectory("modules/${module}")
-        target_link_libraries(${libname} INTERFACE ${module})
-    endforeach()
-endif()
+add_submodules(${libname} modules)
 
 target_include_directories(
     ${libname}
@@ -166,6 +185,8 @@ install(
 
 if(PROJECT_IS_TOP_LEVEL)
     set(BENCHMARK_ENABLE_TESTING OFF)
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+    set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF)
     find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
     find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
 
