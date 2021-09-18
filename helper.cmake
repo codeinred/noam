@@ -2,13 +2,6 @@
 ## Defaults, Definitions and helper functions ##
 ################################################
 
-# PROJECT_IS_TOP_LEVEL is a variable added in CMake 3.21 that checks if the
-# current project is the top-level project. This checks if it's been defined,
-# and if not, it defines it.
-if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
-    set(PROJECT_IS_TOP_LEVEL (${CMAKE_PROJECT_NAME} STREQUAL ${project_name}))
-endif()
-
 # If ALWAYS_FETCH is ON, then find_or_fetch will always fetch dependencies
 # Rather than using the ones provided by the system. This is useful for
 # Creating a static executable.
