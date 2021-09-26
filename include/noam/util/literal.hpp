@@ -32,7 +32,8 @@ struct char_literal {
     char_literal() = default;
     char_literal(char_literal const&) = default;
     char_literal(char_literal&&) = default;
-    constexpr char_literal(char ch) noexcept : ch(ch) {}
+    constexpr char_literal(char ch) noexcept
+      : ch(ch) {}
     constexpr size_t size() const noexcept { return 1; }
     constexpr bool check_and_update(state_t& st) const noexcept {
         if (st.starts_with(ch)) {
@@ -63,5 +64,5 @@ any_literal(empty_literal)->any_literal<empty_literal>;
 any_literal(char c)->any_literal<char_literal>;
 template <size_t N>
 any_literal(char const (&)[N]) -> any_literal<string_literal<N - 1>>;
-any_literal(char const (&)[1]) -> any_literal<empty_literal>;
+any_literal(char const (&)[1])->any_literal<empty_literal>;
 } // namespace noam
