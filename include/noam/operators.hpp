@@ -22,9 +22,8 @@ constexpr auto operator/(Input&& input, Func&& func) {
 
 template <class Parser1, class Parser2>
 constexpr auto operator>>(Parser1&& p1, Parser2&& p2) {
-    return [p1 = std::forward<Parser1>(p1),
-            p2 = std::forward<Parser2>(p2)](state_t state)
-               -> result<parser_value_t<Parser2>> {
+    return [p1 = std::forward<Parser1>(p1), p2 = std::forward<Parser2>(p2)](
+               state_t state) -> result<parser_value_t<Parser2>> {
         auto r1 = p1.parse(state);
         if (r1) {
             auto r2 = p2.parse(r1.get_state());
