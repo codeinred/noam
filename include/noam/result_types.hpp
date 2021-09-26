@@ -39,12 +39,13 @@ struct result
     requires other_than<Result, result&>
     constexpr result& operator=(Result&& r) {
         if constexpr (result_always_good_v<Result>) {
-            return operator=
-                (result {r.get_state(), std::forward<Result>(r).get_value()});
+            return operator=(
+                result {r.get_state(), std::forward<Result>(r).get_value()});
         } else {
             if (r) {
                 return operator=(result {
-                    r.get_state(), std::forward<Result>(r).get_value()});
+                    r.get_state(),
+                    std::forward<Result>(r).get_value()});
             } else {
                 return operator=(result {});
             }
@@ -83,12 +84,13 @@ struct result<Value>
     requires other_than<Result, result&>
     constexpr result& operator=(Result&& r) {
         if constexpr (result_always_good_v<Result>) {
-            return operator=
-                (result {r.get_state(), std::forward<Result>(r).get_value()});
+            return operator=(
+                result {r.get_state(), std::forward<Result>(r).get_value()});
         } else {
             if (r) {
                 return operator=(result {
-                    r.get_state(), std::forward<Result>(r).get_value()});
+                    r.get_state(),
+                    std::forward<Result>(r).get_value()});
             } else {
                 return operator=(result {});
             }
@@ -198,6 +200,6 @@ using default_constructible_parser_result_t = std::conditional_t<
  * @tparam good
  */
 template <class Value, bool good>
-using get_result_t =
-    std::conditional_t<good, pure_result<Value>, result<Value>>;
+using get_result_t = std::
+    conditional_t<good, pure_result<Value>, result<Value>>;
 } // namespace noam
