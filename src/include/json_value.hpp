@@ -2,11 +2,11 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <map>
 #include <noam/util/overload_set.hpp>
 #include <string_view>
 #include <tuple>
 #include <variant>
-#include <map>
 #include <vector>
 
 namespace json {
@@ -20,8 +20,8 @@ using array = std::vector<json_value>;
 constexpr std::nullptr_t null = nullptr;
 struct json_value
   : std::variant<null_type, string, number, boolean, object, array> {
-    using base =
-        std::variant<null_type, string, number, boolean, object, array>;
+    using base = std::
+        variant<null_type, string, number, boolean, object, array>;
     using base::base;
     using base::operator=;
     using base::index;
@@ -33,8 +33,8 @@ constexpr std::variant<Args...>& unwrap(std::variant<Args...>& v) noexcept {
     return v;
 }
 template <class... Args>
-constexpr std::variant<Args...> const&
-unwrap(std::variant<Args...> const& v) noexcept {
+constexpr std::variant<Args...> const& unwrap(
+    std::variant<Args...> const& v) noexcept {
     return v;
 }
 template <class... Args>
@@ -55,7 +55,8 @@ constexpr std::variant<Args...>&& unwrap(std::variant<Args...>&& v) noexcept {
 template <class Callable, class... Variants>
 auto visit(Callable&& c, Variants&&... v) {
     return std::visit(
-        std::forward<Callable>(c), unwrap(std::forward<Variants>(v))...);
+        std::forward<Callable>(c),
+        unwrap(std::forward<Variants>(v))...);
 }
 /**
  * @brief Visits a class derived from std::variant by unwrapping it and then
@@ -70,7 +71,8 @@ auto visit(Callable&& c, Variants&&... v) {
 template <class R, class Callable, class... Variants>
 auto visit(Callable&& c, Variants&&... v) {
     return std::visit<R>(
-        std::forward<Callable>(c), unwrap(std::forward<Variants>(v))...);
+        std::forward<Callable>(c),
+        unwrap(std::forward<Variants>(v))...);
 }
 } // namespace json
 
@@ -107,15 +109,12 @@ struct fmt::formatter<json::json_value> {
         return it;
     }
     template <class Ctx>
-    auto format(std::string& depth, json::json_value const& v, Ctx& ctx) -> decltype(ctx.out()) {
+    auto format(std::string& depth, json::json_value const& v, Ctx& ctx)
+        -> decltype(ctx.out()) {
         auto callable = noam::overload_set {
             [&](auto const& val) { format_to(ctx.out(), "{}", val); },
-            [&](json::null_type) {
-                format_to(ctx.out(), "null");
-            },
-            [&](std::string_view sv) {
-                format_to(ctx.out(), "\"{}\"", sv);
-            },
+            [&](json::null_type) { format_to(ctx.out(), "null"); },
+            [&](std::string_view sv) { format_to(ctx.out(), "\"{}\"", sv); },
             [&](json::array const& arr) {
                 auto begin = arr.begin();
                 auto end = arr.end();
