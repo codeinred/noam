@@ -1,8 +1,8 @@
 #pragma once
-#include <noam/type_traits.hpp>
 #include <noam/coupling/parse_promise.hpp>
 #include <noam/parser.hpp>
 #include <noam/result_types.hpp>
+#include <noam/type_traits.hpp>
 #include <noam/util/stdlib_coroutine.hpp>
 #include <optional>
 #include <string_view>
@@ -30,9 +30,7 @@ namespace noam {
 template <class T, class... Parsers>
 constexpr auto make_w_coro(Parsers&&... parsers) {
     return parser {
-        [... parsers =
-             std::forward<Parsers>(parsers)](state_t st) -> noam::result<T> {
-            co_return T {(co_await parsers)...};
-        }};
+        [... parsers = std::forward<Parsers>(parsers)](state_t st)
+            -> noam::result<T> { co_return T {(co_await parsers)...}; }};
 }
 } // namespace noam
