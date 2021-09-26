@@ -1,8 +1,8 @@
-#include <cmath>
-#include <noam/util/fmt.hpp>
-#include <noam/intrinsics.hpp>
-#include <optional>
 #include "test_helpers.hpp"
+#include <cmath>
+#include <noam/intrinsics.hpp>
+#include <noam/util/fmt.hpp>
+#include <optional>
 
 int main() {
     TEST(noam::parse_short, "1234. hello", 1234, ". hello");
