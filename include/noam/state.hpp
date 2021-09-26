@@ -204,9 +204,8 @@ struct state {
      *
      * @return state
      */
-    constexpr state get_state() const noexcept {
-        return *this;
-    }
+    constexpr state get_state() const noexcept { return *this; }
+
    protected:
     /**
      * @brief Set the state object. This method is only exposed if the result
@@ -214,9 +213,7 @@ struct state {
      *
      * @param other
      */
-    constexpr void set_state(state other) noexcept {
-        *this = other;
-    }
+    constexpr void set_state(state other) noexcept { *this = other; }
     /**
      * @brief Get a reference to the state object. Result types deriving from
      * state can expose this method if they wish their state to be mutated
@@ -224,9 +221,7 @@ struct state {
      *
      * @return constexpr state&
      */
-    constexpr state& ref_state() noexcept {
-        return *this;
-    }
+    constexpr state& ref_state() noexcept { return *this; }
 };
 using state_t = state;
 constexpr state empty_state {};
@@ -251,7 +246,8 @@ static_assert(
     "not be \\0");
 
 static_assert(
-    state((char const*)"Hello") == "Hello"_st, "C String constructor broken");
+    state((char const*)"Hello") == "Hello"_st,
+    "C String constructor broken");
 static_assert("Hello"_st.size() == 5, "literal operator broken");
 static_assert(state("Hello").size() == 5, "String literal constructor broken");
 static_assert(
@@ -262,7 +258,8 @@ static_assert("uwu"_st != "owo"_st, "Differing states must not be equivilant");
 static_assert("a"_st < "b"_st, "Lexical ordering of state is broken");
 static_assert("a"_st <= "b"_st, "Lexical ordering of state is broken");
 static_assert(
-    ""_st < "a"_st, "Empty states must be strictly less than nonempty states");
+    ""_st < "a"_st,
+    "Empty states must be strictly less than nonempty states");
 static_assert(
     !(""_st > "a"_st),
     "Empty states must be strictly less than nonempty states");
@@ -277,7 +274,8 @@ static_assert(empty_state.null(), "Empty state must be null");
 static_assert(empty_state == empty_state, "Empty state must equal itself");
 static_assert(empty_state == ""_st, "Empty state must equal other empty state");
 static_assert(
-    "hewwo uwu 1"_st < "hewwo uwu 2"_st, "Lexical ordering of state is broken");
+    "hewwo uwu 1"_st < "hewwo uwu 2"_st,
+    "Lexical ordering of state is broken");
 static_assert(
     "hewwo uwu "_st < "hewwo uwu 2"_st,
     "Shorter states must be lexically less");
