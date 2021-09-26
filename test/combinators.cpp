@@ -2,10 +2,13 @@
 #include <noam/combinators.hpp>
 #include <noam/intrinsics.hpp>
 
-constexpr noam::parser int_or_42 =
-    noam::either(noam::parse_int, noam::pure(42));
-constexpr noam::parser ws_int_ws =
-    noam::enclose(noam::whitespace, noam::parse_int, noam::whitespace);
+constexpr noam::parser int_or_42 = noam::either(
+    noam::parse_int,
+    noam::pure(42));
+constexpr noam::parser ws_int_ws = noam::enclose(
+    noam::whitespace,
+    noam::parse_int,
+    noam::whitespace);
 
 static_assert(
     std::same_as<
