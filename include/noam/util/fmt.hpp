@@ -15,7 +15,10 @@ struct fmt::formatter<R> : fmt::formatter<noam::result_value_t<R>> {
         if (result) {
             fmt::format_to(ctx.out(), "[value: ");
             base::format(result.get_value(), ctx);
-            return fmt::format_to(ctx.out(), ", state: \"{}\"]", result.get_state());
+            return fmt::format_to(
+                ctx.out(),
+                ", state: \"{}\"]",
+                result.get_state());
         } else {
             return fmt::format_to(ctx.out(), "failed");
         }
