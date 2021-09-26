@@ -36,11 +36,13 @@ struct map {
         if constexpr (always_good) {
             auto result = parser.parse(st);
             return pure_result<value_type> {
-                result.get_state(), func(std::move(result).get_value())};
+                result.get_state(),
+                func(std::move(result).get_value())};
         } else {
             if (auto result = parser.parse(st)) {
                 return noam::result<value_type> {
-                    result.get_state(), func(std::move(result).get_value())};
+                    result.get_state(),
+                    func(std::move(result).get_value())};
             } else {
                 return noam::result<value_type> {};
             }
@@ -59,7 +61,8 @@ struct enclose {
             if (auto value = parser.parse(pre.get_state())) {
                 if (auto post = postfix.parse(value.get_state())) {
                     return noam::result<value_type> {
-                        post.get_state(), std::move(value).get_value()};
+                        post.get_state(),
+                        std::move(value).get_value()};
                 }
             }
         }
@@ -74,8 +77,8 @@ struct match : tuplet::tuple<Parsers...> {
     using base = tuplet::tuple<Parsers...>;
     using base_list = typename base::base_list;
     constexpr static bool always_good = (parser_always_good_v<Parsers> && ...);
-    using result_type =
-        std::conditional_t<always_good, pure_result<empty>, result<empty>>;
+    using result_type = std::
+        conditional_t<always_good, pure_result<empty>, result<empty>>;
     template <class... Bases>
     constexpr auto parse_impl(state_t st, tuplet::type_list<Bases...>) const
         -> result_type {
@@ -113,8 +116,9 @@ struct join : meta::all_but_last_t<match, P...> {
                 match_t::parse_impl(st, typename match_t::base_list {})
                     .get_state());
         } else {
-            if (auto r =
-                    match_t::parse_impl(st, typename match_t::base_list {})) {
+            if (auto r = match_t::parse_impl(
+                    st,
+                    typename match_t::base_list {})) {
                 return p.parse(r.get_state());
             } else {
                 return {};
