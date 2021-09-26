@@ -63,7 +63,8 @@ constexpr auto fold_left(Parser1&& initial, Parser2&& rest, Op&& op) {
 template <class Func, any_parser Parser>
 constexpr auto map(Func&& func, Parser&& parser) {
     return parsers::map {
-        std::forward<Func>(func), std::forward<Parser>(parser)};
+        std::forward<Func>(func),
+        std::forward<Parser>(parser)};
 }
 
 /**
@@ -98,11 +99,13 @@ constexpr auto either(Parser&& p) {
             if constexpr (parser_always_good_v<Parser>) {
                 auto r = p.parse(st);
                 return pure_result<Value> {
-                    r.get_state(), std::move(r).get_value()};
+                    r.get_state(),
+                    std::move(r).get_value()};
             } else {
                 if (auto r = p.parse(st)) {
                     return result<Value> {
-                        r.get_state(), std::move(r).get_value()};
+                        r.get_state(),
+                        std::move(r).get_value()};
                 } else {
                     return result<Value> {};
                 }
@@ -397,7 +400,8 @@ constexpr auto lookahead(Parser&& parser) {
         } else {
             if (result) {
                 return noam::result<value_t> {
-                    state, std::move(result).get_value()};
+                    state,
+                    std::move(result).get_value()};
             } else {
                 return noam::result<value_t> {};
             }
@@ -654,12 +658,12 @@ constexpr auto parse_map(K&& key, V&& val) {
     using result_t = result<Map>;
     return parser {
         [elem = noam::make<tuplet::pair, KeyValueSeparator>(
-             std::forward<K>(key), std::forward<V>(val))](
-            state_t st) -> result_t {
-            constexpr auto open =
-                parsers::match {literal<Opening>, whitespace};
-            constexpr auto close =
-                parsers::match {whitespace, literal<Closing>};
+             std::forward<K>(key),
+             std::forward<V>(val))](state_t st) -> result_t {
+            constexpr auto open = parsers::match {literal<Opening>, whitespace};
+            constexpr auto close = parsers::match {
+                whitespace,
+                literal<Closing>};
             constexpr auto sep = separator<ElemSeparator>;
             if (!update_state(open.parse(st), st))
                 return null_result;
@@ -694,12 +698,14 @@ constexpr auto parse_map(K&& key, V&& val) {
 template <class Map, any_literal Opening, any_literal Closing, class K, class V>
 constexpr auto parse_map(K&& key, V&& val) {
     return parse_map<Map, Opening, ',', ':', Closing>(
-        std::forward<K>(key), std::forward<V>(val));
+        std::forward<K>(key),
+        std::forward<V>(val));
 }
 template <class Map, class K, class V>
 constexpr auto parse_map(K&& key, V&& val) {
     return parse_map<Map, '{', ',', ':', '}'>(
-        std::forward<K>(key), std::forward<V>(val));
+        std::forward<K>(key),
+        std::forward<V>(val));
 }
 template <class T, class Func>
 constexpr auto recurse(Func&& func) {
