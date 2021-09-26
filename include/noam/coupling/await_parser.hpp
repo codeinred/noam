@@ -1,7 +1,7 @@
 #pragma once
-#include <utility>
 #include <noam/type_traits.hpp>
 #include <noam/util/stdlib_coroutine.hpp>
+#include <utility>
 
 namespace noam {
 template <class Parser>
@@ -47,9 +47,7 @@ struct await_parser<Parser> {
     state_t* state = nullptr;
     constexpr state_t copy_state() const noexcept { return *state; }
 
-    constexpr bool await_ready() const noexcept {
-        return true;
-    }
+    constexpr bool await_ready() const noexcept { return true; }
     constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
 
     constexpr decltype(auto) await_resume() {
