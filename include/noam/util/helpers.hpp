@@ -100,8 +100,8 @@ struct all_but_last<List, A> {
 };
 template <template <class...> class List, class A, class... B>
 struct all_but_last<List, A, B...> {
-    using type =
-        typename prepend<A, typename all_but_last<List, B...>::type>::type;
+    using type = typename prepend<A, typename all_but_last<List, B...>::type>::
+        type;
 };
 
 template <class, class... B>
@@ -112,14 +112,15 @@ template <class A>
 struct last<A> {
     using type = A;
 };
-} // namespace noam::meta::internal
+} // namespace noam::meta::impl
 
 namespace noam::meta {
 template <class Type, class TypeList>
 using prepend_t = typename ::noam::meta::impl::prepend<Type, TypeList>::type;
 
 template <template <class...> class List, class... T>
-using all_but_last_t = typename ::noam::meta::impl::all_but_last<List, T...>::type;
+using all_but_last_t = typename ::noam::meta::impl::all_but_last<List, T...>::
+    type;
 
 template <class... T>
 using last_t = typename ::noam::meta::impl::last<T...>::type;
