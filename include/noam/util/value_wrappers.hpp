@@ -146,6 +146,6 @@ struct box<T> {
  * @tparam T the type to box.
  */
 template <class T>
-using box_if_necessary_t =
-    std::conditional_t<std::is_default_constructible_v<T>, T, box<T>>;
+using box_if_necessary_t = std::
+    conditional_t<std::is_default_constructible_v<T>, T, box<T>>;
 } // namespace noam
