@@ -127,8 +127,9 @@ constexpr noam::parser add_w_test_then =
     // so (whitespace >> match_ch<','> >> whitespace)
     //      === parse_separator<','>
     //      === parse_comma_separator
-    parser next_value = test_then(
-        comma_separator >> parse_int, [&](int value) { sum += value; });
+    parser next_value = test_then(comma_separator >> parse_int, [&](int value) {
+        sum += value;
+    });
 
     // While there's a value followed by a comma, add it to the vector
     while (co_await next_value)
@@ -249,13 +250,16 @@ struct parser_test {
     }
 };
 template <class Value>
-parser_test(noam::state_t, noam::state_t, Value value)
-    -> parser_test<Value>;
+parser_test(noam::state_t, noam::state_t, Value value) -> parser_test<Value>;
 template <class Value>
 parser_test(noam::state_t, noam::state_t, Value value, size_t)
     -> parser_test<Value>;
 
-constexpr parser_test test_add {sequence_input, ", hello world", 15998326, 1000};
+constexpr parser_test test_add {
+    sequence_input,
+    ", hello world",
+    15998326,
+    1000};
 
 void BM_parser(benchmark::State& state, auto parser, auto test) {
     for (auto _ : state) {
