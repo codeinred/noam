@@ -109,8 +109,8 @@ using parser_result_t = std::decay_t<decltype(std::declval<Parser>().parse(
  * @tparam Parser
  */
 template <class Parser>
-constexpr bool parser_always_good_v =
-    result_always_good_v<parser_result_t<Parser>>;
+constexpr bool
+    parser_always_good_v = result_always_good_v<parser_result_t<Parser>>;
 
 /**
  * @brief Returns the value type of the result returned by a parser
@@ -128,8 +128,8 @@ using parser_value_t = result_value_t<parser_result_t<Parser>>;
  * @tparam Result the type to test
  */
 template <class Result>
-concept always_good_result =
-    parse_result<Result> && result_always_good_v<Result>;
+concept always_good_result = parse_result<Result> && result_always_good_v<
+    Result>;
 
 /**
  * @brief Represents a parser that produces an always_good_result.
@@ -153,6 +153,6 @@ concept always_good_parser =
  */
 template <class A, class B>
 concept weakly_assignable_from = requires(A& a, B b) {
-    { a = b };
+    {a = b};
 };
 } // namespace noam
