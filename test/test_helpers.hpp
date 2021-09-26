@@ -5,7 +5,9 @@
 bool check(auto x, auto y) { return x == y; }
 bool check(float x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-6; }
 bool check(double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-15; }
-bool check(long double x, auto y) { return x == 0 || std::abs((x - y) / x) < 1e-15; }
+bool check(long double x, auto y) {
+    return x == 0 || std::abs((x - y) / x) < 1e-15;
+}
 
 bool all_passed = true;
 void test(
@@ -28,7 +30,7 @@ void test(
 )",
         name,
         str,
-        noam::pure_result{remainder, expected},
+        noam::pure_result {remainder, expected},
         result,
         passed);
 }
