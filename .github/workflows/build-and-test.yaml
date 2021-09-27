@@ -63,6 +63,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     # Package liburing-dev only exists in ubuntu 20.10 and later, so we have to
     # install it manually
