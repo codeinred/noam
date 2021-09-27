@@ -16,6 +16,9 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/helper.cmake")
 
 find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
 if(PROJECT_IS_TOP_LEVEL)
+    set(BENCHMARK_ENABLE_TESTING OFF)
+    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+    set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF)
     find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
 endif()
 
@@ -39,9 +42,6 @@ target_include_directories(
     include/)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${project_name})
-    set(BENCHMARK_ENABLE_TESTING OFF)
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
-    set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF)
 
     add_source_dir(src ${libname} fmt)
     add_source_dir(bench ${libname} benchmark)
