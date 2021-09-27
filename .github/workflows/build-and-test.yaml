@@ -17,21 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [ gcc-11, clang-12-libc++ ]
-
         include:
-          - name: gcc-11
-            compiler: g++-11
-            packages: >
-              g++-11
-            compiler-flags: ""
+        - name: gcc-11
+          compiler: g++-11
+          packages: >
+            g++-11
+          compiler-flags: ""
 
-          - name: clang-12-libstdc++
-            compiler: clang++-12
-            packages: >
-              g++-11
-              clang++-12
-            compiler-flags: "-stdlib=libstdc++"
+        - name: clang-12-libstdc++
+          compiler: clang++-12
+          packages: >
+            g++-11
+            clang++-12
+          compiler-flags: "-stdlib=libstdc++"
 
 
     steps:
