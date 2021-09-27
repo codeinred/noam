@@ -7,10 +7,22 @@ cmake_minimum_required(VERSION 3.14)
 set(project_name noam)
 set(libname "${project_name}")
 project(${project_name} CXX)
+set(CMAKE_CXX_STANDARD_REQUIRED 20)
 
+##################################
+## Section 2: Find Dependencies ##
+##################################
 include("${CMAKE_CURRENT_SOURCE_DIR}/helper.cmake")
+
+find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
+if(PROJECT_IS_TOP_LEVEL)
+    find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
+endif()
+
+FetchContent_MakeAvailable(${remote_dependencies})
+
 ###################################
-## Section 2: Project CMake code ##
+## Section 3: Project CMake code ##
 ###################################
 
 # Add library and register compile options
@@ -24,23 +36,16 @@ add_submodules(${libname} modules)
 target_include_directories(
     ${libname}
     INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>
-    $<INSTALL_INTERFACE:include>
-)
-
-install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-    DESTINATION include
-)
+    include/)
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${project_name})
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
     set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF)
-    find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
-    find_or_fetch(benchmark "https://github.com/google/benchmark.git" main)
 
     add_source_dir(src ${libname} fmt)
     add_source_dir(bench ${libname} benchmark)
+
+    include(CTest)
     add_test_dir(test ${libname} fmt)
 endif()

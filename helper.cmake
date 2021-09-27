@@ -2,16 +2,16 @@
 ## Defaults, Definitions and helper functions ##
 ################################################
 
-# If ALWAYS_FETCH is ON, then find_or_fetch will always fetch dependencies
-# Rather than using the ones provided by the system. This is useful for
-# Creating a static executable.
-option(
-    ALWAYS_FETCH
-    "Tells find_or_fetch to always fetch packages"
-    OFF)
-
-# We want to export compile commands b/c it's useful for ccls
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# PROJECT_IS_TOP_LEVEL is a variable added in CMake 3.21 that checks if the
+# current project is the top-level project. This checks if it's built in,
+# and if not, adds a definition for it.
+if("${CMAKE_VERSION}" VERSION_LESS "3.21.0")
+    if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+        set(PROJECT_IS_TOP_LEVEL ON)
+    else()
+        set(PROJECT_IS_TOP_LEVEL OFF)
+    endif()
+endif()
 
 # Defines some useful constants representing terminal codes to print things
 # in color.
@@ -40,6 +40,22 @@ function(note msg)
     message("🐈 ${BoldCyan}says: ${msg}${ColorReset}")
 endfunction()
 
+####################################################
+## Sec. 2: Dependency Management via FetchContent ##
+####################################################
+
+set(remote_dependencies "")
+
+# If ALWAYS_FETCH is ON, then find_or_fetch will always fetch any remote
+# dependencies rather than using the ones provided by the system. This is
+# useful for creating a static executable.
+option(
+    ALWAYS_FETCH
+    "Tells find_or_fetch to always fetch packages"
+    OFF)
+
+
+include(FetchContent)
 # find_or_fetch will search for a system installation of ${package} via
 # find_package. If it fails to find one, it'll use FetchContent to download and
 # build it locally.
@@ -56,11 +72,17 @@ function(find_or_fetch package repo tag)
             GIT_REPOSITORY "${repo}"
             GIT_TAG "${tag}"
         )
-        FetchContent_MakeAvailable(${package})
+        list(APPEND remote_dependencies "${package}")
+        set (remote_dependencies  ${remote_dependencies} PARENT_SCOPE)
     else()
         note("Using system cmake package for dependency '${package}'")
     endif()
 endfunction()
+
+#####################################################################
+## Sec. 3: Convinience Functions to add targets more automatically ##
+#####################################################################
+
 
 # Adds every top-level .cpp file in the given directory as an executable. Arguments
 # provided after the directory name are interpreted as libraries, and it'll link
@@ -86,11 +108,12 @@ endfunction()
 # registered as a test via CTest
 function(add_test_dir dir)
     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
-        include(CTest)
         file(GLOB all_targets "${dir}/*.cpp")
         string(REPLACE ";" ", " library_list "${ARGN}")
         foreach(filename ${all_targets})
             get_filename_component(target ${filename} NAME_WLE)
+            # Tests are named test_{name of test}
+            set(target test_${target})
             note("Adding test '${target}' from ${dir}/${target}.cpp with libraries ${library_list}")
             add_executable("${target}" "${filename}")
             target_link_libraries("${target}" PRIVATE ${ARGN})
@@ -126,8 +149,6 @@ function(target_cpp_20 target_name)
     endif()
 endfunction()
 
-# Use pthreads, if availible
-set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 function(add_submodules libname dir)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
