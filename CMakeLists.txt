@@ -7,7 +7,6 @@ cmake_minimum_required(VERSION 3.14)
 set(project_name noam)
 set(libname "${project_name}")
 project(${project_name} CXX)
-set(CMAKE_CXX_STANDARD_REQUIRED 20)
 
 ##################################
 ## Section 2: Find Dependencies ##
@@ -15,6 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED 20)
 include("${CMAKE_CURRENT_SOURCE_DIR}/helper.cmake")
 
 find_or_fetch(fmt "https://github.com/fmtlib/fmt.git" master)
+find_or_fetch(tuplet "https://github.com/codeinred/tuplet.git" main)
+
 if(PROJECT_IS_TOP_LEVEL)
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
@@ -31,10 +32,18 @@ FetchContent_MakeAvailable(${remote_dependencies})
 # Add library and register compile options
 add_library(${libname} INTERFACE)
 
+target_compile_features(
+    ${libname}
+    INTERFACE
+    cxx_std_20
+)
+
+add_library(${libname}::${libname} ALIAS ${libname})
+
 target_cpp_20(${libname})
 
 # Add every directory in the modules/ folder as a subdirectory
-add_submodules(${libname} modules)
+# add_submodules(${libname} modules)
 
 target_include_directories(
     ${libname}
