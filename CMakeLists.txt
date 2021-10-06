@@ -77,6 +77,10 @@ find_or_fetch(
     tuplet
     https://github.com/codeinred/tuplet.git
     main)
+target_link_libraries(
+    noam
+    INTERFACE
+    tuplet::tuplet)
 
 if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
