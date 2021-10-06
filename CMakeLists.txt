@@ -72,6 +72,12 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noam
 
 
 include(helper)
+
+find_or_fetch(
+    tuplet
+    https://github.com/codeinred/tuplet.git
+    main)
+
 if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
 
