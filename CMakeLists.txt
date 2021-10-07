@@ -81,7 +81,6 @@ target_link_libraries(
     noam
     INTERFACE
     tuplet::tuplet)
-export(PACKAGE tuplet)
 if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
 
