@@ -139,6 +139,9 @@ if(PROJECT_IS_TOP_LEVEL)
     add_test_dir(test noam fmt)
     # include(Catch)
     # catch_discover_tests(test_noam)
+else()
+    # If we're not at toplevel we still need to make remote dependencies available
+    FetchContent_MakeAvailable(${remote_dependencies})
 endif()
 
 
