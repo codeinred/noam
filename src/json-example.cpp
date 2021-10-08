@@ -7,6 +7,20 @@
 #include <noam/util/fmt.hpp>
 
 namespace json {
+using json_value = rva::variant<
+    std::nullptr_t,
+    std::string_view,
+    double,
+    bool,
+    std::map<std::string_view, rva::self_t>,
+    std::vector<rva::self_t>>;
+
+using string = std::string_view;
+using number = double;
+using boolean = bool;
+using null_type = std::nullptr_t;
+using array = std::vector<json_value>;
+using object = std::map<std::string_view, json_value>;
 using noam::parser;
 /**
  * The noam::recurse<T> takes a function f : parser T -> parser T, and produces

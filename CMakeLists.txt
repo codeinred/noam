@@ -110,6 +110,10 @@ if(PROJECT_IS_TOP_LEVEL)
         fmt
         https://github.com/fmtlib/fmt.git
         master)
+    find_or_fetch(
+        rva
+        https://github.com/codeinred/rva.git
+        main)
     # always_fetch(
     #     Catch2
     #     https://github.com/catchorg/catch2.git
@@ -118,8 +122,9 @@ if(PROJECT_IS_TOP_LEVEL)
 
     add_source_dir(
         src
-        noam
-        fmt)
+        noam::noam
+        fmt::fmt
+        rva::rva)
     add_source_dir(
         bench
         noam
