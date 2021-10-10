@@ -8,18 +8,43 @@
 #include <noam/util/literal.hpp>
 #include <string>
 
+#ifdef _LIBCPP_VERSION
+#include <fast_float/fast_float.h>
+#endif
+
 namespace noam::parsers {
 template <class T>
 struct charconv {
     auto parse(state_t state) const -> result<T> {
-        auto start_ = state.data();
-        auto end_ = state.data() + state.size();
-        T value;
-        auto result = std::from_chars(start_, end_, value);
-        if (result.ec == std::errc()) {
-            return {state_t(result.ptr, end_), value};
+        if constexpr (std::is_floating_point_v<T>) {
+#ifdef _LIBCPP_VERSION
+            using fast_float::from_chars;
+            using value_t = std::conditional_t<
+                std::is_same_v<T, long double>,
+                double,
+                T>;
+#else
+            using std::from_chars;
+#endif
+            auto start_ = state.data();
+            auto end_ = state.data() + state.size();
+            value_t value;
+            auto result = from_chars(start_, end_, value);
+            if (result.ec == std::errc()) {
+                return {state_t(result.ptr, end_), value};
+            } else {
+                return {};
+            }
         } else {
-            return {};
+            auto start_ = state.data();
+            auto end_ = state.data() + state.size();
+            T value;
+            auto result = std::from_chars(start_, end_, value);
+            if (result.ec == std::errc()) {
+                return {state_t(result.ptr, end_), value};
+            } else {
+                return {};
+            }
         }
     }
 };
@@ -176,7 +201,9 @@ struct view_parser {
             while (st.size() > 0) {
                 char const* view_end = st.data();
                 if (end.check_and_update(st)) [[unlikely]] {
-                    return {st, std::string_view(view_begin, view_end)};
+                    return {
+                        st,
+                        std::string_view(view_begin, view_end - view_begin)};
                 }
                 if (escape.check_and_update(st)) [[unlikely]] {
                     end.check_and_update(st);
