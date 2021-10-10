@@ -1,4 +1,5 @@
 #pragma once
+#include <compare>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -157,7 +158,7 @@ struct state {
         return _begin < _end && _begin[0] == ch;
     }
     constexpr operator std::string_view() const noexcept {
-        return std::string_view(_begin, _end);
+        return std::string_view(_begin, _end - _begin);
     }
     operator std::string() const noexcept { return std::string(_begin, _end); }
 
