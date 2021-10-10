@@ -72,7 +72,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/noam
 
 
 include(helper)
-
+find_or_fetch(
+    fast_float
+    https://github.com/fastfloat/fast_float.git
+    tags/v1.1.2)
 find_or_fetch(
     tuplet
     https://github.com/codeinred/tuplet.git
@@ -80,6 +83,7 @@ find_or_fetch(
 target_link_libraries(
     noam
     INTERFACE
+    fast_float
     tuplet::tuplet)
 if(PROJECT_IS_TOP_LEVEL)
     include(CTest)
