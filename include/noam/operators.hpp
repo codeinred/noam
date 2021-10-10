@@ -15,7 +15,7 @@ namespace noam {
  * @return constexpr auto returns a type identical to func(input). func and
  * input are both forwarded.
  */
-template <class Input, std::invocable<Input> Func>
+template <class Input, invocable<Input> Func>
 constexpr auto operator/(Input&& input, Func&& func) {
     return std::forward<Func>(func)(std::forward<Input>(input));
 }
