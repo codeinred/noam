@@ -25,6 +25,7 @@ struct charconv {
                 T>;
 #else
             using std::from_chars;
+            using value_t = T;
 #endif
             auto start_ = state.data();
             auto end_ = state.data() + state.size();
