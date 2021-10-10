@@ -2,10 +2,15 @@
 #include <concepts>
 #include <noam/state.hpp>
 namespace noam {
-
-using std::convertible_to;
-using std::invocable;
 using std::same_as;
+template <class T, class U>
+concept convertible_to = requires(T const& t) {
+    { U(t) } -> same_as<U>;
+};
+template <class F, class... Args>
+concept invocable = requires(F&& f, Args&&... args) {
+    std::forward<F>(f)(std::forward<Args>(args)...);
+};
 
 template <class T>
 concept stateless = std::is_empty_v<std::decay_t<T>>;
