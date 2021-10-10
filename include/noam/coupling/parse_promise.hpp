@@ -11,7 +11,7 @@ struct parse_promise;
 template <class T>
 class parse_promise_to_result {
     using handle_t = std::coroutine_handle<parse_promise<T>>;
-    handle_t handle;
+    mutable handle_t handle;
 
    public:
     parse_promise_to_result(handle_t handle) noexcept
