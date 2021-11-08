@@ -69,9 +69,6 @@ struct result<Value>
     using value_base = basic_result_value<Value>;
     using value_base::get_value;
 
-    result& operator=(result const&) = default;
-    result& operator=(result&&) = default;
-
     /**
      * @brief Provides an assignment operator for Result types other than the
      * current result
