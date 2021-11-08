@@ -19,9 +19,10 @@ struct charconv {
         if constexpr (std::is_floating_point_v<T>) {
 #ifdef _LIBCPP_VERSION
             using fast_float::from_chars;
-            using value_t = std::conditional_t<
-                std::is_same_v<T, long double>,
-                double,
+            // // fast_float doesn't support long double
+            using value_t = std::conditional_t< // <br>
+                std::is_same_v<T, long double>, // <br>
+                double,                         // <br>
                 T>;
 #else
             using std::from_chars;

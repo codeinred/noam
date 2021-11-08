@@ -11,7 +11,7 @@ struct await_parser {
     // It's non-owned so using a pointer here is fine
     state_t* state = nullptr;
 
-    using result_t = decltype(std::declval<Parser>().parse(state_t {}));
+    using result_t = std::decay_t<decltype(std::declval<Parser>().parse(state_t {}))>;
     result_t result;
     // Gets a copy of the internal state
     constexpr state_t copy_state() const noexcept { return *state; }
@@ -36,26 +36,26 @@ struct await_parser {
     constexpr decltype(auto) await_resume() const& noexcept {
         return result.get_value();
     }
-    constexpr decltype(auto) await_resume() && noexcept {
+    constexpr auto await_resume() && noexcept {
         return std::move(*this).result.get_value();
     }
 };
 
-template <always_good_parser Parser>
-struct await_parser<Parser> {
-    Parser parser {};
-    state_t* state = nullptr;
-    constexpr state_t copy_state() const noexcept { return *state; }
-
-    constexpr bool await_ready() const noexcept { return true; }
-    constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
-
-    constexpr decltype(auto) await_resume() {
-        auto result = std::move(parser).parse(copy_state());
-        *state = result.get_state();
-        return std::move(result).get_value();
-    }
-};
+// template <always_good_parser Parser>
+// struct await_parser<Parser> {
+//     Parser parser {};
+//     state_t* state = nullptr;
+//     constexpr state_t copy_state() const noexcept { return *state; }
+// 
+//     constexpr bool await_ready() const noexcept { return true; }
+//     constexpr void await_suspend(std::coroutine_handle<>) const noexcept {}
+// 
+//     constexpr auto await_resume() {
+//         auto result = std::move(parser).parse(copy_state());
+//         *state = result.get_state();
+//         return std::move(result).get_value();
+//     }
+// };
 
 template <class Parser>
 await_parser(Parser, state_t*) -> await_parser<Parser>;
