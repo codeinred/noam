@@ -1,5 +1,8 @@
 #pragma once
 #include <noam/type_traits.hpp>
+#include <optional>
+#include <type_traits>
+#include <utility>
 
 namespace noam {
 // Type which represents a parser
@@ -10,11 +13,29 @@ struct parser {
     // Enables empty base class optimization
     // if Func is empty (i.e, [](){}), parser<Func> is too
     [[no_unique_address]] Func parse;
+
+    auto read(noam::state_t& st) const {
+        if (auto res = parse(st)) {
+            st = res.get_state();
+            return res;
+        } else {
+            return decltype(res){};
+        }
+    }
 };
 
 template <any_parser Base>
 struct parser<Base> : Base {
     using Base::parse;
+
+    auto read(noam::state_t& st) const {
+        if (auto res = parse(st)) {
+            st = res.get_state();
+            return res;
+        } else {
+            return decltype(res){};
+        }
+    }
 };
 template <class Func>
 parser(Func) -> parser<Func>;
